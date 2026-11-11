@@ -1,0 +1,3 @@
+-- Dados de teste do grupo.
+-- Cada pessoa acrescenta aqui os inserts do próprio módulo
+-- depois de completar a sua entidade.
