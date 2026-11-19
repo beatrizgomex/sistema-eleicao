@@ -1,5 +1,5 @@
 
-package br.com.eleicao.sistema.eleicao.controller;
+package br.com.eleicao.sistema.controller;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
