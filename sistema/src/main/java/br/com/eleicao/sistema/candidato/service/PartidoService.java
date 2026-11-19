@@ -41,6 +41,10 @@ public class PartidoService {
         return buscarPartido(id);
     }
 
+    public void excluir(Long id) {
+        partidoRepository.delete(buscarPorId(id));
+    }
+
     @Transactional
     public Partido atualizarPartido(Long id, PartidoRequest request) {
         Partido partido = buscarPartido(id);
