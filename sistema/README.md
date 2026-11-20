@@ -55,3 +55,50 @@ CRUD em `/partidos` (`POST`, `GET`, `PUT`, `DELETE`), necessário para associar 
 - Excluir um eleitor ou candidato remove também o seu usuário.
 
 Exemplos de requisição e resposta estão no Swagger UI.
+
+### Módulo `votacao` (urna)
+
+Registro dos votos e comprovante de votação. O voto é feito pelo **Eleitor**.
+
+| Método | Rota | Função |
+| --- | --- | --- |
+| GET | `/urna/cedula?eleicaoId=` | Lista os cargos em disputa e os candidatos de cada um |
+| POST | `/urna/votos` | Registra a cédula do eleitor logado e devolve o comprovante |
+| GET | `/urna/comprovante?eleicaoId=` | Devolve o comprovante do eleitor logado |
+
+Exemplo de cédula, com um voto por cargo em disputa:
+
+```json
+{
+  "eleicaoId": 1,
+  "votos": [
+    { "cargo": "GOVERNADOR", "tipo": "CANDIDATO", "numero": 10 },
+    { "cargo": "PRESIDENTE", "tipo": "BRANCO" }
+  ]
+}
+```
+
+Resposta (`201`):
+
+```json
+{ "codigo": "4F7A-9C21-B03E-77D5", "eleicaoId": 1, "emitidoEm": "2026-11-20T10:15:00" }
+```
+
+No perfil `dev`, o eleitor logado vem dos cabeçalhos `X-Usuario-Id` (id do usuário) e `X-Perfil` (`ELEITOR`).
+
+#### Regras
+
+- Só vota quem tem perfil `ELEITOR` (`401` sem login, `403` com outro perfil).
+- A eleição precisa estar `ABERTA` (`409` se não estiver).
+- Cada eleitor vota uma vez por eleição (`409` no segundo voto).
+- A cédula precisa de exatamente um voto para cada cargo em disputa; faltar cargo, repetir cargo ou votar em cargo sem disputa retorna `400`.
+- `CANDIDATO` exige o número, e `BRANCO` e `NULO` não levam número (`400`). Número sem candidato no cargo retorna `404`.
+
+#### Sigilo e integridade
+
+- O `Voto` não guarda o eleitor nem o horário, só eleição, cargo, tipo e candidato.
+- Quem votou fica no `ComprovanteVotacao`, sem dizer em quem.
+- O id do voto é UUID aleatório, para a ordem de gravação não ligar o voto ao comprovante.
+- Votos e comprovante são gravados na mesma transação.
+- Restrição única de eleitor e eleição no comprovante, para barrar dois envios ao mesmo tempo.
+- A eleição é lida com trava durante o voto, então o encerramento espera os votos em andamento.
