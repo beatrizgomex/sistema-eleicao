@@ -1,0 +1,205 @@
+{
+  "info": {
+    "_postman_id": "9f8d5b3e-4c1a-4b2e-9a7d-1e2f3a4b5c6d",
+    "name": "Sistema de Eleição Eletrônica",
+    "description": "Coleção compartilhada da API do Sistema de Simulação de Eleição Eletrônica. Execute primeiro um dos logins na pasta Autenticação para preencher automaticamente a variável {{token}} usada pelas demais pastas.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Autenticação",
+      "description": "Endpoints de login com salvamento automático do token JWT no ambiente e consulta do usuário autenticado.",
+      "item": [
+        {
+          "name": "Login - Chefe da Seção",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const resposta = pm.response.json();",
+                  "    pm.environment.set(\"token\", resposta.token);",
+                  "    pm.collectionVariables.set(\"token\", resposta.token);",
+                  "}",
+                  "pm.test(\"Login do Chefe retornou 200 com token\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json().token).to.be.a(\"string\").and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"{{chefeLogin}}\",\n  \"senha\": \"{{chefeSenha}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Autentica o Chefe da Seção inicial e armazena o token JWT em {{token}}."
+          },
+          "response": []
+        },
+        {
+          "name": "Login - Eleitor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const resposta = pm.response.json();",
+                  "    pm.environment.set(\"token\", resposta.token);",
+                  "    pm.collectionVariables.set(\"token\", resposta.token);",
+                  "}",
+                  "pm.test(\"Login do Eleitor retornou 200 com token\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json().token).to.be.a(\"string\").and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"{{eleitorLogin}}\",\n  \"senha\": \"{{eleitorSenha}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Autentica um eleitor previamente cadastrado pelo Chefe da Seção e salva o JWT em {{token}}."
+          },
+          "response": []
+        },
+        {
+          "name": "Login - Candidato",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const resposta = pm.response.json();",
+                  "    pm.environment.set(\"token\", resposta.token);",
+                  "    pm.collectionVariables.set(\"token\", resposta.token);",
+                  "}",
+                  "pm.test(\"Login do Candidato retornou 200 com token\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json().token).to.be.a(\"string\").and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"{{candidatoLogin}}\",\n  \"senha\": \"{{candidatoSenha}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Autentica um candidato previamente cadastrado pelo Chefe da Seção e salva o JWT em {{token}}."
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar Usuário Autenticado (/auth/me)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Valida o token Bearer atual salvo em {{token}} e retorna {id, login, perfil}."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ]
+}
