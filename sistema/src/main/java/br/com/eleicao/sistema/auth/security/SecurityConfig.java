@@ -1,0 +1,88 @@
+package br.com.eleicao.sistema.auth.security;
+
+import br.com.eleicao.sistema.auth.service.JwtService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+@Configuration
+@EnableWebSecurity
+@Profile("!dev")
+@RequiredArgsConstructor
+public class SecurityConfig {
+
+    private final JwtService jwtService;
+    private final RespostasSeguranca respostasSeguranca;
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(jwtService);
+
+        http
+                .csrf(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .sessionManagement(sessao -> sessao.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(respostasSeguranca.authenticationEntryPoint())
+                        .accessDeniedHandler(respostasSeguranca.accessDeniedHandler()))
+                .authorizeHttpRequests(auth -> auth
+                        // Rotas públicas e documentação OpenAPI/Swagger
+                        .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
+                        .requestMatchers(
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs",
+                                "/v3/api-docs/**",
+                                "/error"
+                        ).permitAll()
+
+                        // Identidade do usuário autenticado
+                        .requestMatchers(HttpMethod.GET, "/auth/me").authenticated()
+
+                        // Gerenciamento de eleições: consulta para autenticados, escrita restrita ao CHEFE
+                        .requestMatchers(HttpMethod.GET, "/eleicoes", "/eleicoes/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/eleicoes", "/eleicoes/**").hasRole("CHEFE")
+                        .requestMatchers(HttpMethod.PUT, "/eleicoes", "/eleicoes/**").hasRole("CHEFE")
+                        .requestMatchers(HttpMethod.PATCH, "/eleicoes", "/eleicoes/**").hasRole("CHEFE")
+                        .requestMatchers(HttpMethod.DELETE, "/eleicoes", "/eleicoes/**").hasRole("CHEFE")
+
+                        // Gerenciamento de eleitores: exclusivo do CHEFE
+                        .requestMatchers("/eleitores", "/eleitores/**").hasRole("CHEFE")
+
+                        // Candidatos e partidos: leitura por CHEFE ou ELEITOR, escrita exclusiva do CHEFE
+                        .requestMatchers(HttpMethod.GET, "/candidatos", "/candidatos/**").hasAnyRole("CHEFE", "ELEITOR")
+                        .requestMatchers(HttpMethod.POST, "/candidatos", "/candidatos/**").hasRole("CHEFE")
+                        .requestMatchers(HttpMethod.PUT, "/candidatos", "/candidatos/**").hasRole("CHEFE")
+                        .requestMatchers(HttpMethod.DELETE, "/candidatos", "/candidatos/**").hasRole("CHEFE")
+
+                        .requestMatchers(HttpMethod.GET, "/partidos", "/partidos/**").hasAnyRole("CHEFE", "ELEITOR")
+                        .requestMatchers(HttpMethod.POST, "/partidos", "/partidos/**").hasRole("CHEFE")
+                        .requestMatchers(HttpMethod.PUT, "/partidos", "/partidos/**").hasRole("CHEFE")
+                        .requestMatchers(HttpMethod.DELETE, "/partidos", "/partidos/**").hasRole("CHEFE")
+
+                        // Urna de votação: exclusiva do ELEITOR
+                        .requestMatchers("/urna", "/urna/**").hasRole("ELEITOR")
+
+                        // Acompanhamento e resultados: perfis autenticados (restrição por cargo no serviço)
+                        .requestMatchers(
+                                "/acompanhamento", "/acompanhamento/**",
+                                "/resultados", "/resultados/**",
+                                "/apuracao", "/apuracao/**"
+                        ).hasAnyRole("CHEFE", "ELEITOR", "CANDIDATO")
+
+                        .anyRequest().authenticated()
+                )
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+}
