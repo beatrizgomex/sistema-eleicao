@@ -18,7 +18,7 @@
   "item": [
     {
       "name": "Autenticação",
-      "description": "Endpoints de login com salvamento automático do token JWT no ambiente e consulta do usuário autenticado.",
+      "description": "Rotas de autenticação com salvamento automático do token JWT no ambiente e consulta do usuário autenticado.",
       "item": [
         {
           "name": "Login - Chefe da Seção",
@@ -57,9 +57,9 @@
               "raw": "{\n  \"login\": \"{{chefeLogin}}\",\n  \"senha\": \"{{chefeSenha}}\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/auth/login",
+              "raw": "{{urlBase}}/auth/login",
               "host": [
-                "{{baseUrl}}"
+                "{{urlBase}}"
               ],
               "path": [
                 "auth",
@@ -107,9 +107,9 @@
               "raw": "{\n  \"login\": \"{{eleitorLogin}}\",\n  \"senha\": \"{{eleitorSenha}}\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/auth/login",
+              "raw": "{{urlBase}}/auth/login",
               "host": [
-                "{{baseUrl}}"
+                "{{urlBase}}"
               ],
               "path": [
                 "auth",
@@ -157,9 +157,9 @@
               "raw": "{\n  \"login\": \"{{candidatoLogin}}\",\n  \"senha\": \"{{candidatoSenha}}\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/auth/login",
+              "raw": "{{urlBase}}/auth/login",
               "host": [
-                "{{baseUrl}}"
+                "{{urlBase}}"
               ],
               "path": [
                 "auth",
@@ -176,9 +176,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/auth/me",
+              "raw": "{{urlBase}}/auth/me",
               "host": [
-                "{{baseUrl}}"
+                "{{urlBase}}"
               ],
               "path": [
                 "auth",
@@ -194,7 +194,7 @@
   ],
   "variable": [
     {
-      "key": "baseUrl",
+      "key": "urlBase",
       "value": "http://localhost:8080"
     },
     {

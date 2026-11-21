@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 @DisplayName("UsuarioLogadoJwt")
-class UsuarioLogadoJwtTest {
+class TesteUsuarioLogadoJwt {
 
     private final UsuarioLogadoJwt usuarioLogadoJwt = new UsuarioLogadoJwt();
 
@@ -28,18 +28,18 @@ class UsuarioLogadoJwtTest {
     @Test
     @DisplayName("retorna id e perfil quando SecurityContext contém UsuarioAutenticado")
     void deveRetornarIdEPerfilDoContexto() {
-        UsuarioAutenticado principal = new UsuarioAutenticado(15L, "eleitor1", Perfil.ELEITOR);
-        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                principal, null, List.of(new SimpleGrantedAuthority("ROLE_ELEITOR")));
-        SecurityContextHolder.getContext().setAuthentication(auth);
+        UsuarioAutenticado identidade = new UsuarioAutenticado(15L, "eleitor1", Perfil.ELEITOR);
+        UsernamePasswordAuthenticationToken autenticacao = new UsernamePasswordAuthenticationToken(
+                identidade, null, List.of(new SimpleGrantedAuthority("ROLE_ELEITOR")));
+        SecurityContextHolder.getContext().setAuthentication(autenticacao);
 
         assertEquals(15L, usuarioLogadoJwt.getId());
         assertEquals(Perfil.ELEITOR, usuarioLogadoJwt.getPerfil());
     }
 
     @Test
-    @DisplayName("retorna null quando SecurityContext está vazio")
-    void deveRetornarNullSemAutenticacao() {
+    @DisplayName("retorna nulo quando SecurityContext está vazio")
+    void deveRetornarNuloSemAutenticacao() {
         SecurityContextHolder.clearContext();
 
         assertNull(usuarioLogadoJwt.getId());
@@ -47,11 +47,11 @@ class UsuarioLogadoJwtTest {
     }
 
     @Test
-    @DisplayName("retorna null quando principal não é UsuarioAutenticado")
-    void deveRetornarNullParaPrincipalDesconhecido() {
-        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+    @DisplayName("retorna nulo quando a identidade não é UsuarioAutenticado")
+    void deveRetornarNuloParaIdentidadeDesconhecida() {
+        UsernamePasswordAuthenticationToken autenticacao = new UsernamePasswordAuthenticationToken(
                 "anonymousUser", null, List.of());
-        SecurityContextHolder.getContext().setAuthentication(auth);
+        SecurityContextHolder.getContext().setAuthentication(autenticacao);
 
         assertNull(usuarioLogadoJwt.getId());
         assertNull(usuarioLogadoJwt.getPerfil());

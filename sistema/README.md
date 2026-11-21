@@ -24,52 +24,52 @@ Java 17, Spring Boot, Spring Data JPA, Spring Security + JWT, Bean Validation, M
 
 ## Arquitetura
 
-A aplicação segue uma **arquitetura em camadas** dentro de uma organização **package-by-feature** (`br.com.eleicao.sistema.<dominio>`), mantendo um pacote `shared/` para tipos e configurações transversais (`enums`, OpenAPI/Swagger).
+A aplicação segue uma **arquitetura em camadas** dentro de uma organização **por domínio** (`br.com.eleicao.sistema.<dominio>`), mantendo um pacote `shared/` para tipos e configurações transversais (`enums`, OpenAPI/Swagger).
 
 ### Camadas
-- **Controller (`controller/`)**: exposição dos endpoints REST, validação de entrada (`@Valid`) e contratos HTTP/OpenAPI.
-- **Service (`service/`)**: implementação das regras de negócio, controle transacional e orquestração entre repositórios.
-- **Repository (`repository/`)**: interfaces Spring Data JPA para persistência relacional.
-- **Model e DTO (`model/`, `dto/`)**: entidades JPA isoladas dos objetos de transferência (`record`), evitando expor dados sensíveis (como hashes de senha) na API.
+- **Controlador (`controller/`)**: exposição das rotas REST, validação de entrada (`@Valid`) e contratos HTTP/OpenAPI.
+- **Serviço (`service/`)**: implementação das regras de negócio, controle transacional e orquestração entre repositórios.
+- **Repositório (`repository/`)**: interfaces Spring Data JPA para persistência relacional.
+- **Modelo e DTO (`model/`, `dto/`)**: entidades JPA isoladas dos objetos de transferência (`record`), evitando expor dados sensíveis (como hashes de senha) na API.
 
 ### Inversão de dependência do usuário autenticado (`UsuarioLogado`)
 Os serviços de negócio não dependem diretamente de cabeçalhos HTTP nem da biblioteca JWT: eles consultam a interface `UsuarioLogado` (`getId()` e `getPerfil()`). A implementação ativa é selecionada por perfil do Spring:
-- **Perfil padrão (`!dev`)**: `SecurityConfig` ativa a cadeia stateless com `JwtAuthenticationFilter`, e `UsuarioLogadoJwt` lê o `UsuarioAutenticado` do `SecurityContext`.
+- **Perfil padrão (`!dev`)**: `ConfiguracaoSeguranca` ativa a cadeia de filtros sem sessão com `FiltroAutenticacaoJwt`, e `UsuarioLogadoJwt` lê o `UsuarioAutenticado` do `SecurityContext`.
 - **Perfil `dev`**: `DevSecurityConfig` libera as rotas para desenvolvimento isolado, e `UsuarioLogadoDev` lê os cabeçalhos `X-Usuario-Id` e `X-Perfil`.
 - **Perfil `test`**: substitui o MySQL por banco H2 em memória (`create-drop`) para execução rápida e isolada dos testes de integração.
 
 ```mermaid
 sequenceDiagram
-    participant Client as PostmanOrSwagger
-    participant AuthCtl as AuthController
-    participant Filter as JwtAuthenticationFilter
-    participant Ctx as SecurityContext
-    participant ULJ as UsuarioLogadoJwt
-    participant Svc as DomainService
-    Client->>AuthCtl: "POST /auth/login {login, senha}"
-    AuthCtl-->>Client: "200 {token, tipo: Bearer, expiraEm, perfil}"
-    Client->>Filter: "Request + Authorization: Bearer token"
-    Filter->>Ctx: "validate signature and exp, set UsuarioAutenticado(id, login, perfil)"
-    Filter->>Svc: "route rule passed (else 401 or 403)"
-    Svc->>ULJ: "getId() / getPerfil()"
-    ULJ->>Ctx: "read principal"
+    participant Cliente as Postman ou Swagger
+    participant Controlador as ControladorAutenticacao
+    participant Filtro as FiltroAutenticacaoJwt
+    participant Contexto as SecurityContext
+    participant UsuarioAtual as UsuarioLogadoJwt
+    participant Servico as Serviço de domínio
+    Cliente->>Controlador: "POST /auth/login {login, senha}"
+    Controlador-->>Cliente: "200 {token, tipo: Bearer, expiraEm, perfil}"
+    Cliente->>Filtro: "Requisição com Authorization: Bearer token"
+    Filtro->>Contexto: "Validar assinatura e expiração e registrar UsuarioAutenticado(id, login, perfil)"
+    Filtro->>Servico: "Encaminhar requisição autorizada"
+    Servico->>UsuarioAtual: "getId() / getPerfil()"
+    UsuarioAtual->>Contexto: "Consultar usuário autenticado"
 ```
 
 ## Segurança e Autenticação
 
-A API é **stateless** (`SessionCreationPolicy.STATELESS`, CSRF desabilitado) e utiliza **JSON Web Token (JWT)** assinado com `HMAC-SHA256` (`HS256`).
+A API é **sem estado de sessão** (`SessionCreationPolicy.STATELESS`, CSRF desabilitado) e utiliza **JSON Web Token (JWT)** assinado com `HMAC-SHA256` (`HS256`).
 
 ### Fluxo e credenciais
 - **Senhas**: armazenadas exclusivamente com hash `BCrypt` (`BCryptPasswordEncoder`, com *salt* aleatório por registro).
-- **Chefe inicial**: na subida da aplicação, caso não exista nenhum usuário com perfil `CHEFE`, `ChefeInicialConfig` cria automaticamente o usuário `chefe` / `chefe123` (configurável por `chefe.login` e `chefe.senha`).
-- **Emissão do token (`POST /auth/login`)**: valida credenciais e devolve `{ token, tipo: "Bearer", expiraEm, perfil }`. Claims incluídas no JWT: `sub` (login), `id` (id da tabela `usuario`), `perfil` (`CHEFE`, `ELEITOR` ou `CANDIDATO`), `iat` e `exp`.
+- **Chefe inicial**: na subida da aplicação, caso não exista nenhum usuário com perfil `CHEFE`, `ConfiguracaoChefeInicial` cria automaticamente o usuário `chefe` / `chefe123` (configurável por `chefe.login` e `chefe.senha`).
+- **Emissão do token (`POST /auth/login`)**: valida credenciais e devolve `{ token, tipo: "Bearer", expiraEm, perfil }`. Campos incluídos no JWT: `sub` (login), `id` (id da tabela `usuario`), `perfil` (`CHEFE`, `ELEITOR` ou `CANDIDATO`), `iat` e `exp`.
 - **Identidade atual (`GET /auth/me`)**: retorna `{ id, login, perfil }` do usuário autenticado a partir do token.
 - **Respostas de erro padronizadas**:
   - `401 Unauthorized`: requisição sem token ou com token inválido/adulterado/expirado (ou falha de credenciais no login).
   - `403 Forbidden`: usuário autenticado, porém com perfil sem permissão para a rota ou método HTTP solicitado.
 - **Sigilo do voto**: o token JWT identifica o eleitor apenas para verificar aptidão e registrar o `ComprovanteVotacao`; a entidade `Voto` não armazena referência ao eleitor nem ao usuário.
 
-### Regras de acesso por rota (`SecurityConfig`)
+### Regras de acesso por rota (`ConfiguracaoSeguranca`)
 
 | Método(s) | Rota | Acesso permitido |
 | --- | --- | --- |

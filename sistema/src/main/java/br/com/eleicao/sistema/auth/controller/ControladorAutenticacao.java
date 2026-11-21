@@ -1,12 +1,12 @@
 package br.com.eleicao.sistema.auth.controller;
 
-import br.com.eleicao.sistema.auth.dto.LoginRequest;
-import br.com.eleicao.sistema.auth.dto.LoginResponse;
-import br.com.eleicao.sistema.auth.dto.UsuarioLogadoResponse;
+import br.com.eleicao.sistema.auth.dto.SolicitacaoLogin;
+import br.com.eleicao.sistema.auth.dto.RespostaLogin;
+import br.com.eleicao.sistema.auth.dto.RespostaUsuarioLogado;
 import br.com.eleicao.sistema.auth.model.Usuario;
 import br.com.eleicao.sistema.auth.repository.UsuarioRepository;
 import br.com.eleicao.sistema.auth.security.UsuarioAutenticado;
-import br.com.eleicao.sistema.auth.service.AuthService;
+import br.com.eleicao.sistema.auth.service.ServicoAutenticacao;
 import br.com.eleicao.sistema.auth.service.UsuarioLogado;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -30,11 +30,11 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/auth")
 @RequiredArgsConstructor
 @Tag(name = "Autenticação", description = "Autenticação de usuários e emissão de token JWT")
-public class AuthController {
+public class ControladorAutenticacao {
 
-    private final AuthService authService;
-    private final ObjectProvider<UsuarioLogado> usuarioLogadoProvider;
-    private final UsuarioRepository usuarioRepository;
+    private final ServicoAutenticacao servicoAutenticacao;
+    private final ObjectProvider<UsuarioLogado> provedorUsuarioLogado;
+    private final UsuarioRepository repositorioUsuarios;
 
     @PostMapping("/login")
     @SecurityRequirements()
@@ -45,8 +45,8 @@ public class AuthController {
             @ApiResponse(responseCode = "400", description = "Campos obrigatórios ausentes ou em branco"),
             @ApiResponse(responseCode = "401", description = "Login ou senha inválidos")
     })
-    public LoginResponse login(@Valid @RequestBody LoginRequest request) {
-        return authService.autenticar(request);
+    public RespostaLogin autenticar(@Valid @RequestBody SolicitacaoLogin requisicao) {
+        return servicoAutenticacao.autenticar(requisicao);
     }
 
     @GetMapping("/me")
@@ -56,17 +56,17 @@ public class AuthController {
             @ApiResponse(responseCode = "200", description = "Dados do usuário autenticado"),
             @ApiResponse(responseCode = "401", description = "Não autenticado")
     })
-    public UsuarioLogadoResponse me() {
-        UsuarioLogado logado = usuarioLogadoProvider.getIfAvailable();
+    public RespostaUsuarioLogado consultarUsuarioLogado() {
+        UsuarioLogado logado = provedorUsuarioLogado.getIfAvailable();
         if (logado == null || logado.getId() == null || logado.getPerfil() == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuário não autenticado");
         }
 
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String login = (auth != null && auth.getPrincipal() instanceof UsuarioAutenticado autenticado)
+        Authentication autenticacao = SecurityContextHolder.getContext().getAuthentication();
+        String login = (autenticacao != null && autenticacao.getPrincipal() instanceof UsuarioAutenticado autenticado)
                 ? autenticado.login()
-                : usuarioRepository.findById(logado.getId()).map(Usuario::getLogin).orElse(null);
+                : repositorioUsuarios.findById(logado.getId()).map(Usuario::getLogin).orElse(null);
 
-        return new UsuarioLogadoResponse(logado.getId(), login, logado.getPerfil());
+        return new RespostaUsuarioLogado(logado.getId(), login, logado.getPerfil());
     }
 }

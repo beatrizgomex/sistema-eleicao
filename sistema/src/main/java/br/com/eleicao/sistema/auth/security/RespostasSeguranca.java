@@ -15,31 +15,31 @@ import java.time.Instant;
 @Component
 public class RespostasSeguranca {
 
-    public AuthenticationEntryPoint authenticationEntryPoint() {
-        return (request, response, authException) -> {
-            Object motivoJwt = request.getAttribute(JwtAuthenticationFilter.ATRIBUTO_ERRO_JWT);
+    public AuthenticationEntryPoint aoExigirAutenticacao() {
+        return (requisicao, resposta, erroAutenticacao) -> {
+            Object motivoJwt = requisicao.getAttribute(FiltroAutenticacaoJwt.ATRIBUTO_ERRO_JWT);
             String mensagem = motivoJwt instanceof String texto
                     ? texto
                     : "Autenticação necessária para acessar este recurso";
-            escreverErroJson(response, request, HttpStatus.UNAUTHORIZED, mensagem);
+            escreverErroJson(resposta, requisicao, HttpStatus.UNAUTHORIZED, mensagem);
         };
     }
 
-    public AccessDeniedHandler accessDeniedHandler() {
-        return (request, response, accessDeniedException) ->
-                escreverErroJson(response, request, HttpStatus.FORBIDDEN,
+    public AccessDeniedHandler aoNegarAcesso() {
+        return (requisicao, resposta, erroAcessoNegado) ->
+                escreverErroJson(resposta, requisicao, HttpStatus.FORBIDDEN,
                         "Acesso negado para o perfil do usuário autenticado");
     }
 
     private void escreverErroJson(
-            HttpServletResponse response,
-            HttpServletRequest request,
+            HttpServletResponse resposta,
+            HttpServletRequest requisicao,
             HttpStatus status,
             String mensagem) throws IOException {
 
-        response.setStatus(status.value());
-        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        resposta.setStatus(status.value());
+        resposta.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        resposta.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
         String corpo = """
                 {"timestamp":"%s","status":%d,"error":"%s","message":"%s","path":"%s"}"""
@@ -48,10 +48,10 @@ public class RespostasSeguranca {
                         status.value(),
                         escaparJson(status.getReasonPhrase()),
                         escaparJson(mensagem),
-                        escaparJson(request.getRequestURI())
+                        escaparJson(requisicao.getRequestURI())
                 );
 
-        response.getWriter().write(corpo);
+        resposta.getWriter().write(corpo);
     }
 
     private String escaparJson(String valor) {

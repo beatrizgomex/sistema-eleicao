@@ -3,7 +3,7 @@ package br.com.eleicao.sistema.auth.dto;
 import br.com.eleicao.sistema.shared.enums.Perfil;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-public record UsuarioLogadoResponse(
+public record RespostaUsuarioLogado(
         @Schema(description = "Identificador do usuário autenticado", example = "1")
         Long id,
 

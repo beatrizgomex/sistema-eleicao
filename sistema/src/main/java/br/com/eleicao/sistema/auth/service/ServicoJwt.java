@@ -19,22 +19,22 @@ import java.time.Instant;
 import java.util.Date;
 
 @Service
-public class JwtService {
+public class ServicoJwt {
 
     private static final int TAMANHO_MINIMO_SEGREDO_BYTES = 32;
 
     private final SecretKey chave;
     private final Duration expiracao;
-    private final Clock clock;
+    private final Clock relogio;
 
     @Autowired
-    public JwtService(
+    public ServicoJwt(
             @Value("${jwt.secret}") String segredo,
             @Value("${jwt.expiracao-minutos}") long expiracaoMinutos) {
         this(segredo, expiracaoMinutos, Clock.systemUTC());
     }
 
-    public JwtService(String segredo, long expiracaoMinutos, Clock clock) {
+    public ServicoJwt(String segredo, long expiracaoMinutos, Clock relogio) {
         if (segredo == null || segredo.getBytes(StandardCharsets.UTF_8).length < TAMANHO_MINIMO_SEGREDO_BYTES) {
             throw new IllegalArgumentException("jwt.secret deve ter pelo menos 32 bytes para assinatura HS256");
         }
@@ -43,11 +43,11 @@ public class JwtService {
         }
         this.chave = Keys.hmacShaKeyFor(segredo.getBytes(StandardCharsets.UTF_8));
         this.expiracao = Duration.ofMinutes(expiracaoMinutos);
-        this.clock = clock;
+        this.relogio = relogio;
     }
 
     public String gerarToken(Usuario usuario) {
-        Instant agora = clock.instant();
+        Instant agora = relogio.instant();
         Instant expiraEm = agora.plus(expiracao);
         return gerarToken(usuario, agora, expiraEm);
     }
@@ -57,7 +57,7 @@ public class JwtService {
     }
 
     public Instant agora() {
-        return clock.instant();
+        return relogio.instant();
     }
 
     public String gerarToken(Usuario usuario, Instant emitidoEm, Instant expiraEm) {
@@ -75,19 +75,19 @@ public class JwtService {
         if (token == null || token.isBlank()) {
             throw new JwtException("Token JWT ausente ou vazio");
         }
-        Claims claims = Jwts.parser()
+        Claims campos = Jwts.parser()
                 .verifyWith(chave)
-                .clock(() -> Date.from(clock.instant()))
+                .clock(() -> Date.from(relogio.instant()))
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
 
-        String login = claims.getSubject();
-        Number idNumero = claims.get("id", Number.class);
-        String perfilTexto = claims.get("perfil", String.class);
+        String login = campos.getSubject();
+        Number idNumero = campos.get("id", Number.class);
+        String perfilTexto = campos.get("perfil", String.class);
 
         if (login == null || login.isBlank() || idNumero == null || perfilTexto == null) {
-            throw new JwtException("Token JWT sem as claims obrigatórias");
+            throw new JwtException("Token JWT sem os campos obrigatórios");
         }
 
         final Perfil perfil;

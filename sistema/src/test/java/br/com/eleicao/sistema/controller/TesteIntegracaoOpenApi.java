@@ -16,15 +16,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @DisplayName("Documentação OpenAPI / Swagger")
-class OpenApiIntegrationTest {
+class TesteIntegracaoOpenApi {
 
     @Autowired
-    private MockMvc mockMvc;
+    private MockMvc simuladorMvc;
 
     @Test
     @DisplayName("expõe especificação OpenAPI com esquema bearerAuth, login público e respostas 401/403")
     void deveExporEspecificacaoOpenApiComSegurancaJwt() throws Exception {
-        mockMvc.perform(get("/v3/api-docs"))
+        simuladorMvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.info.title").value("Sistema de Simulação de Eleição Eletrônica - API"))
                 .andExpect(jsonPath("$.components.securitySchemes.bearerAuth.type").value("http"))

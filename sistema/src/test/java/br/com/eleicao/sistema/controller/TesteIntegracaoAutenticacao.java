@@ -1,7 +1,7 @@
 package br.com.eleicao.sistema.controller;
 
 import br.com.eleicao.sistema.auth.security.UsuarioAutenticado;
-import br.com.eleicao.sistema.auth.service.JwtService;
+import br.com.eleicao.sistema.auth.service.ServicoJwt;
 import br.com.eleicao.sistema.auth.service.UsuarioService;
 import br.com.eleicao.sistema.shared.enums.Perfil;
 import com.jayway.jsonpath.JsonPath;
@@ -25,21 +25,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles({"dev", "test"})
 @Transactional
 @DisplayName("/auth")
-class AuthIntegrationTest {
+class TesteIntegracaoAutenticacao {
 
     @Autowired
-    private MockMvc mockMvc;
+    private MockMvc simuladorMvc;
 
     @Autowired
-    private UsuarioService usuarioService;
+    private UsuarioService servicoUsuario;
 
     @Autowired
-    private JwtService jwtService;
+    private ServicoJwt servicoJwt;
 
     @Test
     @DisplayName("autentica chefe inicial com 200 e devolve token JWT válido")
     void loginChefeInicialDevolveTokenValido() throws Exception {
-        String resposta = mockMvc.perform(post("/auth/login")
+        String resposta = simuladorMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"login":"chefe","senha":"chefe123"}
@@ -54,7 +54,7 @@ class AuthIntegrationTest {
                 .getContentAsString();
 
         String token = JsonPath.read(resposta, "$.token");
-        UsuarioAutenticado autenticado = jwtService.validar(token);
+        UsuarioAutenticado autenticado = servicoJwt.validar(token);
         assertEquals("chefe", autenticado.login());
         assertEquals(Perfil.CHEFE, autenticado.perfil());
     }
@@ -62,9 +62,9 @@ class AuthIntegrationTest {
     @Test
     @DisplayName("autentica eleitor cadastrado e devolve perfil ELEITOR")
     void loginEleitorDevolvePerfilEleitor() throws Exception {
-        usuarioService.criar("eleitor_auth", "segredo", Perfil.ELEITOR);
+        servicoUsuario.criar("eleitor_auth", "segredo", Perfil.ELEITOR);
 
-        mockMvc.perform(post("/auth/login")
+        simuladorMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"login":"eleitor_auth","senha":"segredo"}
@@ -77,7 +77,7 @@ class AuthIntegrationTest {
     @Test
     @DisplayName("rejeita senha incorreta com 401")
     void loginSenhaIncorretaRetorna401() throws Exception {
-        mockMvc.perform(post("/auth/login")
+        simuladorMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"login":"chefe","senha":"errada"}
@@ -88,7 +88,7 @@ class AuthIntegrationTest {
     @Test
     @DisplayName("rejeita login inexistente com 401")
     void loginInexistenteRetorna401() throws Exception {
-        mockMvc.perform(post("/auth/login")
+        simuladorMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"login":"inexistente","senha":"qualquer"}
@@ -99,7 +99,7 @@ class AuthIntegrationTest {
     @Test
     @DisplayName("rejeita campos em branco com 400")
     void loginCamposEmBrancoRetorna400() throws Exception {
-        mockMvc.perform(post("/auth/login")
+        simuladorMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"login":"","senha":""}

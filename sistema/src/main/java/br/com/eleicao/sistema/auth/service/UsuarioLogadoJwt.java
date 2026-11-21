@@ -13,17 +13,17 @@ public class UsuarioLogadoJwt implements UsuarioLogado {
 
     @Override
     public Long getId() {
-        UsuarioAutenticado usuario = extrairPrincipal();
+        UsuarioAutenticado usuario = obterUsuarioAutenticado();
         return usuario == null ? null : usuario.id();
     }
 
     @Override
     public Perfil getPerfil() {
-        UsuarioAutenticado usuario = extrairPrincipal();
+        UsuarioAutenticado usuario = obterUsuarioAutenticado();
         return usuario == null ? null : usuario.perfil();
     }
 
-    private UsuarioAutenticado extrairPrincipal() {
+    private UsuarioAutenticado obterUsuarioAutenticado() {
         Authentication autenticacao = SecurityContextHolder.getContext().getAuthentication();
         if (autenticacao == null || !autenticacao.isAuthenticated()) {
             return null;

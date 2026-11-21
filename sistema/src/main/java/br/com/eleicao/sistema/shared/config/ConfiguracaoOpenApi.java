@@ -23,30 +23,30 @@ import java.util.List;
                         votação secreta e apuração de resultados.
 
                         ### Como autenticar no Swagger UI
-                        1. Execute `POST /auth/login` informando `login` e `senha` (por padrão, o Chefe inicial é `chefe` / `chefe123`).
+                        1. Execute `POST /autenticacao/login` informando `login` e `senha` (por padrão, o Chefe inicial é `chefe` / `chefe123`).
                         2. Copie o valor do campo `token` retornado na resposta.
                         3. Clique no botão **Authorize** no topo da página, cole apenas o token JWT e confirme."""
         ),
-        security = @SecurityRequirement(name = OpenApiConfig.ESQUEMA_BEARER)
+        security = @SecurityRequirement(name = ConfiguracaoOpenApi.ESQUEMA_BEARER)
 )
 @SecurityScheme(
-        name = OpenApiConfig.ESQUEMA_BEARER,
+        name = ConfiguracaoOpenApi.ESQUEMA_BEARER,
         type = SecuritySchemeType.HTTP,
         scheme = "bearer",
         bearerFormat = "JWT",
         description = "Informe o token JWT obtido em POST /auth/login"
 )
-public class OpenApiConfig {
+public class ConfiguracaoOpenApi {
 
     public static final String ESQUEMA_BEARER = "bearerAuth";
 
     @Bean
-    public OpenApiCustomizer respostasPadraoSegurancaCustomizer() {
-        return openApi -> {
-            if (openApi.getPaths() == null) {
+    public OpenApiCustomizer documentarRespostasSeguranca() {
+        return especificacao -> {
+            if (especificacao.getPaths() == null) {
                 return;
             }
-            openApi.getPaths().forEach((caminho, item) -> item.readOperations().forEach(operacao -> {
+            especificacao.getPaths().forEach((caminho, item) -> item.readOperations().forEach(operacao -> {
                 if ("/auth/login".equals(caminho)) {
                     operacao.setSecurity(List.of());
                     return;

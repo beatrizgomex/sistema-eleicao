@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
 
-public record LoginResponse(
+public record RespostaLogin(
         @Schema(description = "Token JWT assinado", example = "eyJhbGciOiJIUzI1NiJ9...")
         String token,
 

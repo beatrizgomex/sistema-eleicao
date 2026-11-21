@@ -1,6 +1,6 @@
 package br.com.eleicao.sistema.auth.security;
 
-import br.com.eleicao.sistema.auth.service.JwtService;
+import br.com.eleicao.sistema.auth.service.ServicoJwt;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,24 +17,24 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 @Profile("!dev")
 @RequiredArgsConstructor
-public class SecurityConfig {
+public class ConfiguracaoSeguranca {
 
-    private final JwtService jwtService;
+    private final ServicoJwt servicoJwt;
     private final RespostasSeguranca respostasSeguranca;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(jwtService);
+    public SecurityFilterChain cadeiaFiltrosSeguranca(HttpSecurity http) throws Exception {
+        FiltroAutenticacaoJwt filtroJwt = new FiltroAutenticacaoJwt(servicoJwt);
 
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .sessionManagement(sessao -> sessao.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(respostasSeguranca.authenticationEntryPoint())
-                        .accessDeniedHandler(respostasSeguranca.accessDeniedHandler()))
-                .authorizeHttpRequests(auth -> auth
+                .exceptionHandling(erro -> erro
+                        .authenticationEntryPoint(respostasSeguranca.aoExigirAutenticacao())
+                        .accessDeniedHandler(respostasSeguranca.aoNegarAcesso()))
+                .authorizeHttpRequests(autenticacao -> autenticacao
                         // Rotas públicas e documentação OpenAPI/Swagger
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                         .requestMatchers(
@@ -81,7 +81,7 @@ public class SecurityConfig {
 
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(filtroJwt, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

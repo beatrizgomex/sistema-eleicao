@@ -9,18 +9,18 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class ChefeInicialConfig {
+public class ConfiguracaoChefeInicial {
 
     @Bean
     CommandLineRunner criarChefeInicial(
-            UsuarioRepository usuarioRepository,
-            UsuarioService usuarioService,
+            UsuarioRepository repositorioUsuarios,
+            UsuarioService servicoUsuario,
             @Value("${chefe.login:chefe}") String login,
             @Value("${chefe.senha:chefe123}") String senha) {
-        return args -> {
-            if (!usuarioRepository.existsByPerfil(Perfil.CHEFE)
-                    && !usuarioRepository.existsByLogin(login)) {
-                usuarioService.criar(login, senha, Perfil.CHEFE);
+        return argumentos -> {
+            if (!repositorioUsuarios.existsByPerfil(Perfil.CHEFE)
+                    && !repositorioUsuarios.existsByLogin(login)) {
+                servicoUsuario.criar(login, senha, Perfil.CHEFE);
             }
         };
     }
