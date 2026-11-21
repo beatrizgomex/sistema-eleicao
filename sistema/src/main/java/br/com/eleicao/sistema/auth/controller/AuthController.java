@@ -11,6 +11,7 @@ import br.com.eleicao.sistema.auth.service.UsuarioLogado;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class AuthController {
     private final UsuarioRepository usuarioRepository;
 
     @PostMapping("/login")
+    @SecurityRequirements()
     @Operation(summary = "Autenticar usuário",
             description = "Valida login e senha e devolve um token JWT assinado com o perfil do usuário.")
     @ApiResponses({
