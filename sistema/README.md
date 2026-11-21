@@ -7,11 +7,17 @@ Java 17, Spring Boot, Spring Data JPA, Spring Security + JWT, Bean Validation, M
 
 ## Como rodar
 1. Ter o JDK 17 (ou superior) e o MySQL ligados.
-2. Definir as variáveis de ambiente:
+2. Definir as variáveis de ambiente (opcionais em ambiente local):
    - `DB_USER` (padrão: `root`)
-   - `DB_PASSWORD`
-3. Na raiz do projeto: `./mvnw spring-boot:run`
-4. Swagger UI: http://localhost:8080/swagger-ui.html
+   - `DB_PASSWORD` (padrão: `admin`)
+   - `JWT_SECRET` (mínimo de 32 caracteres; possui chave padrão para ambiente local)
+3. Na pasta `sistema/`, subir a aplicação:
+   - **Com segurança JWT ativa (padrão):** `./mvnw spring-boot:run`
+   - **Modo de desenvolvimento sem validação de token** (simulação via cabeçalhos `X-Usuario-Id` e `X-Perfil`): `./mvnw spring-boot:run -Dspring-boot.run.profiles=dev`
+4. Na primeira inicialização, caso não exista nenhum usuário `CHEFE`, o sistema cria automaticamente o Chefe da Seção inicial:
+   - **Login:** `chefe` (configurável por `chefe.login`)
+   - **Senha:** `chefe123` (configurável por `chefe.senha`)
+5. Swagger UI: http://localhost:8080/swagger-ui.html (especificação JSON em http://localhost:8080/v3/api-docs)
 
 ## Testes
 `./mvnw test`
