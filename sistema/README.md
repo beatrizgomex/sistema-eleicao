@@ -10,6 +10,8 @@ Java 17, Spring Boot, Spring Data JPA, Spring Security + JWT, Bean Validation, M
 2. Definir as variáveis de ambiente:
    - `DB_USER` (padrão: `root`)
    - `DB_PASSWORD`
+   - `JWT_SECRET` com uma chave aleatória de pelo menos 32 bytes para emitir tokens.
+   - `CHEFE_SENHA` na primeira inicialização de um banco sem Chefe. O login inicial é `chefe` e pode ser configurado em `CHEFE_LOGIN`.
 3. Na raiz do projeto: `./mvnw spring-boot:run`
 4. Swagger UI: http://localhost:8080/swagger-ui.html
 
