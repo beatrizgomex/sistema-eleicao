@@ -8,7 +8,7 @@ public record SolicitacaoLogin(
         @NotBlank(message = "Login é obrigatório")
         String login,
 
-        @Schema(description = "Senha do usuário", example = "chefe123")
+        @Schema(description = "Senha do usuário")
         @NotBlank(message = "Senha é obrigatória")
         String senha
 ) {

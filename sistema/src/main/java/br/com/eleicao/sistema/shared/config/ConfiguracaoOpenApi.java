@@ -23,7 +23,7 @@ import java.util.List;
                         votação secreta e apuração de resultados.
 
                         ### Como autenticar no Swagger UI
-                        1. Execute `POST /autenticacao/login` informando `login` e `senha` (por padrão, o Chefe inicial é `chefe` / `chefe123`).
+                        1. Execute `POST /auth/login` informando `login` e `senha`.
                         2. Copie o valor do campo `token` retornado na resposta.
                         3. Clique no botão **Authorize** no topo da página, cole apenas o token JWT e confirme."""
         ),

@@ -7,16 +7,16 @@ Java 17, Spring Boot, Spring Data JPA, Spring Security + JWT, Bean Validation, M
 
 ## Como rodar
 1. Ter o JDK 17 (ou superior) e o MySQL ligados.
-2. Definir as variáveis de ambiente (opcionais em ambiente local):
+2. Definir as variáveis de ambiente:
    - `DB_USER` (padrão: `root`)
    - `DB_PASSWORD` (padrão: `admin`)
-   - `JWT_SECRET` (mínimo de 32 caracteres; possui chave padrão para ambiente local)
+   - `JWT_SECRET` (obrigatória, use uma chave aleatória com pelo menos 32 bytes, inclusive no perfil `dev` para que o login continue disponível)
 3. Na pasta `sistema/`, subir a aplicação:
    - **Com segurança JWT ativa (padrão):** `./mvnw spring-boot:run`
    - **Modo de desenvolvimento sem validação de token** (simulação via cabeçalhos `X-Usuario-Id` e `X-Perfil`): `./mvnw spring-boot:run -Dspring-boot.run.profiles=dev`
 4. Na primeira inicialização, caso não exista nenhum usuário `CHEFE`, o sistema cria automaticamente o Chefe da Seção inicial:
    - **Login:** `chefe` (configurável por `chefe.login`)
-   - **Senha:** `chefe123` (configurável por `chefe.senha`)
+   - **Senha:** defina `CHEFE_SENHA` antes de iniciar com um banco sem Chefe. Em bancos que já têm um Chefe, essa variável não altera a senha cadastrada.
 5. Swagger UI: http://localhost:8080/swagger-ui.html (especificação JSON em http://localhost:8080/v3/api-docs)
 
 ## Testes
@@ -61,7 +61,7 @@ A API é **stateless** (`SessionCreationPolicy.STATELESS`, CSRF desabilitado) e 
 
 ### Fluxo e credenciais
 - **Senhas**: armazenadas exclusivamente com hash `BCrypt` (`BCryptPasswordEncoder`, com *salt* aleatório por registro).
-- **Chefe inicial**: na subida da aplicação, caso não exista nenhum usuário com perfil `CHEFE`, `ChefeInicialConfig` cria automaticamente o usuário `chefe` / `chefe123` (configurável por `chefe.login` e `chefe.senha`).
+- **Chefe inicial**: na subida da aplicação, caso não exista nenhum usuário com perfil `CHEFE`, `ChefeInicialConfig` cria o usuário com o login `chefe` (configurável por `CHEFE_LOGIN`) e a senha informada em `CHEFE_SENHA`.
 - **Emissão do token (`POST /auth/login`)**: valida credenciais e devolve `{ token, tipo: "Bearer", expiraEm, perfil }`. Claims incluídas no JWT: `sub` (login), `id` (id da tabela `usuario`), `perfil` (`CHEFE`, `ELEITOR` ou `CANDIDATO`), `iat` e `exp`.
 - **Identidade atual (`GET /auth/me`)**: retorna `{ id, login, perfil }` do usuário autenticado a partir do token.
 - **Respostas de erro padronizadas**:

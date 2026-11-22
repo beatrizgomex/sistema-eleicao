@@ -35,8 +35,9 @@ public class ServicoJwt {
     }
 
     public ServicoJwt(String segredo, long expiracaoMinutos, Clock relogio) {
-        if (segredo == null || segredo.getBytes(StandardCharsets.UTF_8).length < TAMANHO_MINIMO_SEGREDO_BYTES) {
-            throw new IllegalArgumentException("jwt.secret deve ter pelo menos 32 bytes para assinatura HS256");
+        if (segredo == null || segredo.isBlank()
+                || segredo.getBytes(StandardCharsets.UTF_8).length < TAMANHO_MINIMO_SEGREDO_BYTES) {
+            throw new IllegalArgumentException("Configure JWT_SECRET com uma chave de pelo menos 32 bytes para assinatura HS256");
         }
         if (expiracaoMinutos <= 0) {
             throw new IllegalArgumentException("jwt.expiracao-minutos deve ser maior que zero");
