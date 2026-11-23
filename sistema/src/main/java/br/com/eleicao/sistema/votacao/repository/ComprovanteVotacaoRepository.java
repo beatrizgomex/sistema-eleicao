@@ -11,5 +11,7 @@ public interface ComprovanteVotacaoRepository extends JpaRepository<ComprovanteV
 
     boolean existsByEleitorIdAndEleicaoId(Long eleitorId, Long eleicaoId);
 
+    boolean existsByEleitorId(Long eleitorId);
+
     Optional<ComprovanteVotacao> findByEleitorIdAndEleicaoId(Long eleitorId, Long eleicaoId);
 }

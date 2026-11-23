@@ -12,6 +12,8 @@ import br.com.eleicao.sistema.candidato.repository.PartidoRepository;
 import br.com.eleicao.sistema.eleicao.model.Eleicao;
 import br.com.eleicao.sistema.shared.enums.Cargo;
 import br.com.eleicao.sistema.shared.enums.Perfil;
+import br.com.eleicao.sistema.shared.enums.SituacaoEleicao;
+import br.com.eleicao.sistema.votacao.repository.VotoRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,7 @@ public class CandidatoService {
     private final CandidatoRepository candidatoRepository;
     private final PartidoRepository partidoRepository;
     private final UsuarioService usuarioService;
+    private final VotoRepository votoRepository; // novo campo final
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -76,7 +79,18 @@ public class CandidatoService {
     }
 
     public void excluir(Long id) {
-        candidatoRepository.delete(buscar(id));
+        Candidato candidato = buscar(id);
+
+        if (votoRepository.existsByCandidatoId(id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Candidato não pode ser excluído: já recebeu votos");
+        }
+        if (candidato.getEleicao().getSituacao() == SituacaoEleicao.ABERTA) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Candidato não pode ser excluído com a eleição aberta");
+        }
+        candidatoRepository.delete(candidato);
+
     }
 
     private Candidato buscar(Long id) {
