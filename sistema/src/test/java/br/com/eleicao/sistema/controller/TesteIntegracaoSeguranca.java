@@ -116,10 +116,55 @@ class TesteIntegracaoSeguranca {
     }
 
     @Test
-    @DisplayName("permite 200 quando ELEITOR consulta candidatos")
-    void eleitorEmGetCandidatosRetorna200() throws Exception {
+    @DisplayName("permite ao ELEITOR consultar candidatos por eleição e cargo")
+    void eleitorConsultaCandidatosPorEleicaoECargo() throws Exception {
         simuladorMvc.perform(get("/candidatos")
+                        .param("eleicaoId", "1")
+                        .param("cargo", "PRESIDENTE")
                         .header(HttpHeaders.AUTHORIZATION, cabecalhoAutorizacao(eleitor)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("restringe listagem geral, filtros incompletos e consultas por ID ao CHEFE")
+    void eleitorSemOsDoisFiltrosOuEmConsultaPorIdRecebe403() throws Exception {
+        String autorizacao = cabecalhoAutorizacao(eleitor);
+
+        simuladorMvc.perform(get("/candidatos").header(HttpHeaders.AUTHORIZATION, autorizacao))
+                .andExpect(status().isForbidden());
+        simuladorMvc.perform(get("/candidatos").param("eleicaoId", "1")
+                        .header(HttpHeaders.AUTHORIZATION, autorizacao))
+                .andExpect(status().isForbidden());
+        simuladorMvc.perform(get("/candidatos").param("cargo", "PRESIDENTE")
+                        .header(HttpHeaders.AUTHORIZATION, autorizacao))
+                .andExpect(status().isForbidden());
+        simuladorMvc.perform(get("/candidatos").param("eleicaoId", "1").param("cargo", " ")
+                        .header(HttpHeaders.AUTHORIZATION, autorizacao))
+                .andExpect(status().isForbidden());
+        simuladorMvc.perform(get("/candidatos/1").param("eleicaoId", "1").param("cargo", "PRESIDENTE")
+                        .header(HttpHeaders.AUTHORIZATION, autorizacao))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("restringe consultas de partidos ao CHEFE")
+    void eleitorEmGetPartidosRecebe403() throws Exception {
+        String autorizacao = cabecalhoAutorizacao(eleitor);
+
+        simuladorMvc.perform(get("/partidos").header(HttpHeaders.AUTHORIZATION, autorizacao))
+                .andExpect(status().isForbidden());
+        simuladorMvc.perform(get("/partidos/1").header(HttpHeaders.AUTHORIZATION, autorizacao))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("permite ao CHEFE listar candidatos e partidos")
+    void chefeListaCandidatosEPartidos() throws Exception {
+        String autorizacao = cabecalhoAutorizacao(chefe);
+
+        simuladorMvc.perform(get("/candidatos").header(HttpHeaders.AUTHORIZATION, autorizacao))
+                .andExpect(status().isOk());
+        simuladorMvc.perform(get("/partidos").header(HttpHeaders.AUTHORIZATION, autorizacao))
                 .andExpect(status().isOk());
     }
 

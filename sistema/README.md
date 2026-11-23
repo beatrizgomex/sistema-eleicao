@@ -79,8 +79,8 @@ A API é **stateless** (`SessionCreationPolicy.STATELESS`, CSRF desabilitado) e 
 | `GET` | `/eleicoes`, `/eleicoes/**` | Qualquer usuário autenticado (`CHEFE`, `ELEITOR`, `CANDIDATO`) |
 | `POST`, `PUT`, `PATCH`, `DELETE` | `/eleicoes`, `/eleicoes/**` | `CHEFE` |
 | Todos | `/eleitores`, `/eleitores/**` | `CHEFE` |
-| `GET` | `/candidatos/**`, `/partidos/**` | `CHEFE`, `ELEITOR` |
-| `POST`, `PUT`, `DELETE` | `/candidatos/**`, `/partidos/**` | `CHEFE` |
+| `GET` | `/candidatos?eleicaoId={id}&cargo={cargo}` (ambos os filtros) | `CHEFE`, `ELEITOR` |
+| Demais operações | `/candidatos`, `/candidatos/**`, `/partidos`, `/partidos/**` | `CHEFE` |
 | Todos | `/urna`, `/urna/**` | `ELEITOR` |
 | Todos | `/acompanhamento/**`, `/resultados/**`, `/apuracao/**` | `CHEFE`, `ELEITOR`, `CANDIDATO` (filtro por cargo do candidato no serviço) |
 
@@ -90,7 +90,7 @@ A API é **stateless** (`SessionCreationPolicy.STATELESS`, CSRF desabilitado) e 
 
 ### Módulos `eleitor` e `candidato`
 
-Cadastros que alimentam a eleição: eleitores, candidatos e partidos. O acesso é restrito ao **Chefe da Seção**. A consulta de candidatos por cargo também é permitida ao **Eleitor**.
+Cadastros que alimentam a eleição: eleitores, candidatos e partidos. O acesso é restrito ao **Chefe da Seção**. O **Eleitor** pode consultar candidatos informando a eleição e o cargo.
 
 #### Eleitores
 

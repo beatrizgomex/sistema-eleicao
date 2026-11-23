@@ -12,6 +12,8 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.util.StringUtils;
 
 @Configuration
 @EnableWebSecurity
@@ -25,6 +27,7 @@ public class ConfiguracaoSeguranca {
     @Bean
     public SecurityFilterChain cadeiaFiltrosSeguranca(HttpSecurity http) throws Exception {
         FiltroAutenticacaoJwt filtroJwt = new FiltroAutenticacaoJwt(servicoJwt);
+        var getCandidatos = PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.GET, "/candidatos");
 
         http
                 .csrf(AbstractHttpConfigurer::disable)
@@ -58,16 +61,12 @@ public class ConfiguracaoSeguranca {
                         // Gerenciamento de eleitores: exclusivo do CHEFE
                         .requestMatchers("/eleitores", "/eleitores/**").hasRole("CHEFE")
 
-                        // Candidatos e partidos: leitura por CHEFE ou ELEITOR, escrita exclusiva do CHEFE
-                        .requestMatchers(HttpMethod.GET, "/candidatos", "/candidatos/**").hasAnyRole("CHEFE", "ELEITOR")
-                        .requestMatchers(HttpMethod.POST, "/candidatos", "/candidatos/**").hasRole("CHEFE")
-                        .requestMatchers(HttpMethod.PUT, "/candidatos", "/candidatos/**").hasRole("CHEFE")
-                        .requestMatchers(HttpMethod.DELETE, "/candidatos", "/candidatos/**").hasRole("CHEFE")
-
-                        .requestMatchers(HttpMethod.GET, "/partidos", "/partidos/**").hasAnyRole("CHEFE", "ELEITOR")
-                        .requestMatchers(HttpMethod.POST, "/partidos", "/partidos/**").hasRole("CHEFE")
-                        .requestMatchers(HttpMethod.PUT, "/partidos", "/partidos/**").hasRole("CHEFE")
-                        .requestMatchers(HttpMethod.DELETE, "/partidos", "/partidos/**").hasRole("CHEFE")
+                        // O ELEITOR pode consultar candidatos somente por eleição e cargo.
+                        .requestMatchers(requisicao -> getCandidatos.matches(requisicao)
+                                && StringUtils.hasText(requisicao.getParameter("eleicaoId"))
+                                && StringUtils.hasText(requisicao.getParameter("cargo")))
+                        .hasAnyRole("CHEFE", "ELEITOR")
+                        .requestMatchers("/candidatos", "/candidatos/**", "/partidos", "/partidos/**").hasRole("CHEFE")
 
                         // Urna de votação: exclusiva do ELEITOR
                         .requestMatchers("/urna", "/urna/**").hasRole("ELEITOR")
