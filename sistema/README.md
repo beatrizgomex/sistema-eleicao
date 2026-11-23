@@ -19,9 +19,6 @@ Java 17, Spring Boot, Spring Data JPA, Spring Security + JWT, Bean Validation, M
    - **Senha:** defina `CHEFE_SENHA` antes de iniciar com um banco sem Chefe. Em bancos que já têm um Chefe, essa variável não altera a senha cadastrada.
 5. Swagger UI: http://localhost:8080/swagger-ui.html (especificação JSON em http://localhost:8080/v3/api-docs)
 
-## Testes
-`./mvnw test`
-
 ## Arquitetura
 
 A aplicação segue uma **arquitetura em camadas** dentro de uma organização **package-by-feature** (`br.com.eleicao.sistema.<dominio>`), mantendo um pacote `shared/` para tipos e configurações transversais (`enums`, OpenAPI/Swagger).
@@ -87,6 +84,9 @@ A API é **stateless** (`SessionCreationPolicy.STATELESS`, CSRF desabilitado) e 
 ### Uso no Swagger UI e no Postman
 - **Swagger UI** (`http://localhost:8080/swagger-ui.html`): execute `POST /auth/login`, copie o `token`, clique em **Authorize**, cole o token e confirme (`persist-authorization` mantém o token ao recarregar a página).
 - **Postman**: importe `postman/sistema-eleicao.postman_collection.json` e o ambiente `postman/local.postman_environment.json`. As requisições da pasta **Autenticação** salvam automaticamente `{{token}}` no ambiente, e a coleção inteira já herda `Authorization: Bearer {{token}}`.
+
+## Testes
+`./mvnw test`
 
 ### Módulo autenticação
 
