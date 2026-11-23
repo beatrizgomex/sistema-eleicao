@@ -10,11 +10,30 @@ Java 17, Spring Boot, Spring Data JPA, Spring Security + JWT, Bean Validation, M
 2. Definir as variáveis de ambiente:
    - `DB_USER` (padrão: `root`)
    - `DB_PASSWORD`
+   - `JWT_SECRET` com uma chave aleatória de pelo menos 32 bytes para emitir tokens.
+   - `CHEFE_SENHA` na primeira inicialização de um banco sem Chefe. O login inicial é `chefe` e pode ser configurado em `CHEFE_LOGIN`.
 3. Na raiz do projeto: `./mvnw spring-boot:run`
 4. Swagger UI: http://localhost:8080/swagger-ui.html
 
 ## Testes
 `./mvnw test`
+
+### Módulo autenticação
+
+A rota `POST /auth/login` recebe `login` e `senha` em JSON. A API busca o usuário pelo login e verifica a senha usando o hash armazenado no banco. Quando as credenciais são válidas, retorna `200` com `token`, `tipo` (`Bearer`), `expiraEm` e `perfil`. Campos obrigatórios ausentes ou em branco retornam `400`. Credenciais inválidas retornam `401`.
+
+O JWT é assinado com HS256 e expira em 60 minutos na configuração padrão. Ele contém o ID, o login e o perfil do usuário autenticado.
+
+#### Organização do módulo
+
+- `ControladorAutenticacao` recebe as requisições de login.
+- `ServicoAutenticacao` verifica as credenciais e monta a resposta.
+- `ServicoJwt` emite os tokens e verifica a assinatura e a expiração na validação.
+- `ConfiguracaoChefeInicial` cria a conta inicial na primeira execução em que o banco ainda não tem um usuário com perfil `CHEFE`.
+
+#### Dados de autenticação
+
+A entidade `Usuario` é persistida na tabela `usuario`, que armazena o ID, o login único, o hash da senha e o perfil de acesso. O Chefe da Seção usa essa mesma tabela, com o perfil `CHEFE`.
 
 ### Módulos `eleitor` e `candidato`
 
