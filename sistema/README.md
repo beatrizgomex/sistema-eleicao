@@ -102,3 +102,60 @@ No perfil `dev`, o eleitor logado vem dos cabeçalhos `X-Usuario-Id` (id do usu�
 - Votos e comprovante são gravados na mesma transação.
 - Restrição única de eleitor e eleição no comprovante, para barrar dois envios ao mesmo tempo.
 - A eleição é lida com trava durante o voto, então o encerramento espera os votos em andamento.
+
+## Apuração
+
+Resultados parciais e finais da eleição. Os dois endpoints exigem login (`X-Usuario-Id` e `X-Perfil`, no perfil `dev`).
+
+| Método | Rota | Perfis | Situação da eleição |
+| --- | --- | --- | --- |
+| GET | `/apuracao/parcial?eleicaoId={id}&cargo={cargo}` | `CHEFE`, `ELEITOR` (todos os cargos); `CANDIDATO` (somente o próprio cargo) | Somente `ABERTA` |
+| GET | `/apuracao/resultado?eleicaoId={id}` | Qualquer perfil logado | Somente `ENCERRADA` |
+
+### Respostas
+
+`GET /apuracao/parcial` (`200`):
+
+```json
+{
+  "cargo": "GOVERNADOR",
+  "candidatos": [
+    { "id": 1, "nome": "Ana", "votos": 10 },
+    { "id": 2, "nome": "Bruno", "votos": 0 }
+  ],
+  "brancos": 2,
+  "nulos": 1
+}
+```
+
+`GET /apuracao/resultado` (`200`), uma entrada por cargo em disputa:
+
+```json
+[
+  {
+    "cargo": "GOVERNADOR",
+    "candidatos": [
+      { "id": 1, "nome": "Ana", "votos": 10 },
+      { "id": 2, "nome": "Bruno", "votos": 4 }
+    ],
+    "brancos": 2,
+    "nulos": 1,
+    "vencedor": { "id": 1, "nome": "Ana", "votos": 10 },
+    "empate": false
+  }
+]
+```
+
+### Erros
+
+| Código | Quando |
+| --- | --- |
+| `401` | Requisição sem login |
+| `403` | `CANDIDATO` consultando a parcial de outro cargo |
+| `404` | `eleicaoId` inexistente (nas duas rotas) |
+| `409` | Parcial com eleição `AGENDADA` ou `ENCERRADA`; resultado com eleição `AGENDADA` ou `ABERTA` |
+
+### Regras
+
+- Candidatos sem votos aparecem com `votos: 0`.
+- Brancos e nulos não disputam a vitória. Em empate no topo, `vencedor` vem nulo e `empate` é `true`.
