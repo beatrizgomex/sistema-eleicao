@@ -178,3 +178,74 @@ Resultados parciais e finais da eleição. Os dois endpoints exigem login (`X-Us
 
 - Candidatos sem votos aparecem com `votos: 0`.
 - Brancos e nulos não disputam a vitória. Em empate no topo, `vencedor` vem nulo e `empate` é `true`.
+
+
+### Módulo `eleicao` (ciclo de vida)
+
+Gerenciamento das eleições, desde o cadastro até o encerramento. O módulo controla as situações da eleição, valida datas e horários e impede transições de estado inválidas.
+
+#### Organização do módulo
+
+- `EleicaoController` recebe as requisições HTTP e disponibiliza os endpoints REST.
+- `EleicaoService` implementa as regras de negócio, validações e transições de situação.
+- `EleicaoRepository` realiza a persistência utilizando Spring Data JPA.
+- `Eleicao` representa os dados da eleição no banco.
+- `EleicaoRequestDTO` recebe os dados de cadastro e alteração.
+- `EleicaoResponseDTO` padroniza as respostas da API.
+
+A implementação segue uma arquitetura em camadas, separando controlador, serviço, repositório e modelo.
+
+#### Endpoints
+
+| Método | Rota | Função |
+| --- | --- | --- |
+| POST | `/eleicoes` | Cadastra uma eleição |
+| GET | `/eleicoes` | Lista as eleições cadastradas |
+| GET | `/eleicoes/{id}` | Consulta uma eleição pelo ID |
+| PUT | `/eleicoes/{id}` | Altera uma eleição agendada |
+| PATCH | `/eleicoes/{id}/abrir` | Abre uma eleição |
+| PATCH | `/eleicoes/{id}/encerrar` | Encerra uma eleição |
+
+#### Regras
+
+- Toda eleição é cadastrada inicialmente como `AGENDADA`.
+- Os dados de uma eleição só podem ser alterados enquanto ela estiver `AGENDADA`.
+- A abertura só é permitida na data e dentro do horário configurado.
+- As transições válidas são `AGENDADA → ABERTA → ENCERRADA`.
+- Não é permitido encerrar uma eleição que ainda esteja agendada.
+- Uma eleição encerrada não pode ser reaberta.
+- O horário de encerramento deve ser posterior ao horário de abertura.
+
+#### Modelagem do banco de dados
+
+A entidade `Eleicao` é persistida no MySQL por meio do Spring Data JPA.
+
+| Atributo | Tipo Java | Descrição |
+| --- | --- | --- |
+| `id` | Long | Identificador único da eleição |
+| `data` | LocalDate | Data da eleição |
+| `turno` | Turno | PRIMEIRO ou SEGUNDO |
+| `horaAbertura` | LocalTime | Horário de abertura |
+| `horaEncerramento` | LocalTime | Horário de encerramento |
+| `situacao` | SituacaoEleicao | AGENDADA, ABERTA ou ENCERRADA |
+
+A entidade `Eleicao` também é utilizada pelos módulos de candidatos, votação e apuração para identificar a eleição e consultar sua situação.
+
+#### Erros
+
+| Código | Quando |
+| --- | --- |
+| `400` | Dados obrigatórios ausentes ou horários inválidos |
+| `404` | Eleição inexistente |
+| `409` | Transição inválida, alteração de eleição não agendada ou abertura fora do período permitido |
+
+#### Testes
+
+Foram implementados 10 testes unitários com JUnit 5 e Mockito e 10 testes de integração com Spring Boot, MockMvc e H2.
+
+Os testes verificam cadastro, listagem, consulta, alteração, abertura, encerramento e regras de validação.
+
+Na execução conjunta realizada durante o desenvolvimento, os 21 testes então existentes no projeto passaram sem falhas.
+
+Os endpoints também estão documentados no Swagger UI.
+
