@@ -67,7 +67,7 @@ class ApuracaoIntegrationTest {
         ana = candidato(partido, "Ana", 10, "ana");
         bruno = candidato(partido, "Bruno", 20, "bruno");
 
-        Usuario chefe = usuario("chefe", Perfil.CHEFE);
+        Usuario chefe = usuario("chefe_apuracao", Perfil.CHEFE);
         entityManager.persist(chefe);
         chefeId = chefe.getId();
         entityManager.flush();
