@@ -88,7 +88,7 @@ A API é **stateless** (`SessionCreationPolicy.STATELESS`, CSRF desabilitado) e 
 ## Testes
 `./mvnw test`
 
-### Módulo autenticação
+## Módulo `autenticação`
 
 A rota `POST /auth/login` recebe `login` e `senha` em JSON. A API busca o usuário pelo login e verifica a senha usando o hash armazenado no banco. Quando as credenciais são válidas, retorna `200` com `token`, `tipo` (`Bearer`), `expiraEm` e `perfil`. Campos obrigatórios ausentes ou em branco retornam `400`. Credenciais inválidas retornam `401`.
 
@@ -105,7 +105,7 @@ O JWT é assinado com HS256 e expira em 60 minutos na configuração padrão. El
 
 A entidade `Usuario` é persistida na tabela `usuario`, que armazena o ID, o login único, o hash da senha e o perfil de acesso. O Chefe da Seção usa essa mesma tabela, com o perfil `CHEFE`.
 
-### Módulos `eleitor` e `candidato`
+### Módulos `eleitor`, `candidato` e `partido`
 
 Cadastros que alimentam a eleição: eleitores, candidatos e partidos. O acesso é restrito ao **Chefe da Seção**. O **Eleitor** pode consultar candidatos informando a eleição e o cargo.
 
@@ -145,7 +145,7 @@ CRUD em `/partidos` (`POST`, `GET`, `PUT`, `DELETE`), necessário para associar 
 
 Exemplos de requisição e resposta estão no Swagger UI.
 
-### Módulo `votacao` (urna)
+## Módulo `votação` (urna)
 
 Registro dos votos e comprovante de votação. O voto é feito pelo **Eleitor**.
 
@@ -192,7 +192,7 @@ No perfil `dev`, o eleitor logado vem dos cabeçalhos `X-Usuario-Id` (id do usu�
 - Restrição única de eleitor e eleição no comprovante, para barrar dois envios ao mesmo tempo.
 - A eleição é lida com trava durante o voto, então o encerramento espera os votos em andamento.
 
-## Apuração
+## Modulo apuração
 
 Resultados parciais e finais da eleição. Os dois endpoints exigem login (`X-Usuario-Id` e `X-Perfil`, no perfil `dev`).
 
