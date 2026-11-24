@@ -8,6 +8,7 @@ import br.com.eleicao.sistema.eleitor.dto.EleitorUpdateRequest;
 import br.com.eleicao.sistema.eleitor.model.Eleitor;
 import br.com.eleicao.sistema.eleitor.repository.EleitorRepository;
 import br.com.eleicao.sistema.shared.enums.Perfil;
+import br.com.eleicao.sistema.votacao.repository.ComprovanteVotacaoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ public class EleitorService {
 
     private final EleitorRepository eleitorRepository;
     private final UsuarioService usuarioService;
+    private final ComprovanteVotacaoRepository comprovanteRepository;
 
     @Transactional
     public EleitorResponse cadastrarEleitor(EleitorRequest request) {
@@ -58,7 +60,13 @@ public class EleitorService {
     }
 
     public void excluir(Long id) {
-        eleitorRepository.delete(buscar(id));
+        Eleitor eleitor = buscar(id);
+
+        if (comprovanteRepository.existsByEleitorId(id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Eleitor não pode ser excluído: já participou de uma votação");
+        }
+        eleitorRepository.delete(eleitor);
     }
 
     private Eleitor buscar(Long id) {

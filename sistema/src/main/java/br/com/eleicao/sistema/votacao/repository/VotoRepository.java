@@ -33,4 +33,7 @@ public interface VotoRepository extends JpaRepository<Voto, UUID> {
     List<CandidatoComVotos> contarVotosPorCandidato(@Param("eleicaoId") Long eleicaoId,
                                                     @Param("cargo") Cargo cargo,
                                                     @Param("tipo") TipoVoto tipo);
+
+    boolean existsByCandidatoId(Long candidatoId);
+
 }
