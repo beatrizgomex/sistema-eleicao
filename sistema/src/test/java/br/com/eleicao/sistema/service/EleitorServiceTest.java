@@ -8,6 +8,7 @@ import br.com.eleicao.sistema.eleitor.dto.EleitorUpdateRequest;
 import br.com.eleicao.sistema.eleitor.model.Eleitor;
 import br.com.eleicao.sistema.eleitor.repository.EleitorRepository;
 import br.com.eleicao.sistema.shared.enums.Perfil;
+import br.com.eleicao.sistema.votacao.repository.ComprovanteVotacaoRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -30,6 +31,7 @@ import static org.mockito.Mockito.when;
 class EleitorServiceTest {
 
     @Mock EleitorRepository eleitorRepository;
+    @Mock ComprovanteVotacaoRepository comprovanteRepository;
     @Mock UsuarioService usuarioService;
     @InjectMocks EleitorService eleitorService;
 
@@ -37,6 +39,9 @@ class EleitorServiceTest {
         Eleitor e = new Eleitor();
         e.setId(1L);
         e.setNome("Maria");
+        Usuario usuario = new Usuario();
+        usuario.setId(7L);
+        e.setUsuario(usuario);
         e.setDocumento("111");
         return e;
     }

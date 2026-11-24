@@ -62,7 +62,7 @@ public class EleitorService {
     public void excluir(Long id) {
         Eleitor eleitor = buscar(id);
 
-        if (comprovanteRepository.existsByEleitorId(id)) {
+        if (comprovanteRepository.existsByUsuarioId(eleitor.getUsuario().getId())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Eleitor não pode ser excluído: já participou de uma votação");
         }

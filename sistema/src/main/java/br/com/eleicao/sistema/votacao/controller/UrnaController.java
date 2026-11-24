@@ -37,14 +37,14 @@ public class UrnaController {
     @PostMapping("/votos")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Votar",
-            description = "Registra a cédula do eleitor logado, com um voto por cargo em disputa "
+            description = "Registra a cédula do votante logado, com um voto por cargo em disputa "
                     + "(CANDIDATO com número, BRANCO ou NULO), e devolve o comprovante. "
                     + "O voto não guarda quem votou.")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Voto registrado"),
             @ApiResponse(responseCode = "400", description = "Cédula incompleta, cargo repetido ou número indevido"),
             @ApiResponse(responseCode = "401", description = "Não autenticado"),
-            @ApiResponse(responseCode = "403", description = "Usuário não é eleitor"),
+            @ApiResponse(responseCode = "403", description = "Perfil sem permissão para votar"),
             @ApiResponse(responseCode = "404", description = "Eleição, eleitor ou candidato não encontrado"),
             @ApiResponse(responseCode = "409", description = "Eleição não está aberta ou o eleitor já votou")
     })
@@ -54,11 +54,11 @@ public class UrnaController {
 
     @GetMapping("/comprovante")
     @Operation(summary = "Consultar comprovante",
-            description = "Devolve o comprovante de votação do eleitor logado na eleição informada.")
+            description = "Devolve o comprovante de votação do votante logado na eleição informada.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Comprovante encontrado"),
             @ApiResponse(responseCode = "401", description = "Não autenticado"),
-            @ApiResponse(responseCode = "403", description = "Usuário não é eleitor"),
+            @ApiResponse(responseCode = "403", description = "Perfil sem permissão para votar"),
             @ApiResponse(responseCode = "404", description = "O eleitor não votou nesta eleição")
     })
     public ComprovanteResponse comprovante(@RequestParam Long eleicaoId) {

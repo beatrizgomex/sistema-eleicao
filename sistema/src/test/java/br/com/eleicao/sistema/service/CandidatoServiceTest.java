@@ -12,6 +12,8 @@ import br.com.eleicao.sistema.candidato.repository.PartidoRepository;
 import br.com.eleicao.sistema.eleicao.model.Eleicao;
 import br.com.eleicao.sistema.shared.enums.Cargo;
 import br.com.eleicao.sistema.shared.enums.Perfil;
+import br.com.eleicao.sistema.votacao.repository.ComprovanteVotacaoRepository;
+import br.com.eleicao.sistema.votacao.repository.VotoRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,13 +39,16 @@ class CandidatoServiceTest {
     @Mock CandidatoRepository candidatoRepository;
     @Mock PartidoRepository partidoRepository;
     @Mock UsuarioService usuarioService;
+    @Mock VotoRepository votoRepository;
+    @Mock ComprovanteVotacaoRepository comprovanteRepository;
     @Mock EntityManager entityManager;
 
     CandidatoService candidatoService;
 
     @BeforeEach
     void setUp() {
-        candidatoService = new CandidatoService(candidatoRepository, partidoRepository, usuarioService);
+        candidatoService = new CandidatoService(candidatoRepository, partidoRepository, usuarioService,
+                votoRepository, comprovanteRepository);
         ReflectionTestUtils.setField(candidatoService, "entityManager", entityManager);
     }
 

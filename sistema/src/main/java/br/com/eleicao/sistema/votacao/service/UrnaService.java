@@ -5,8 +5,8 @@ import br.com.eleicao.sistema.candidato.repository.CandidatoRepository;
 import br.com.eleicao.sistema.candidato.service.CandidatoService;
 import br.com.eleicao.sistema.eleicao.model.Eleicao;
 import br.com.eleicao.sistema.eleicao.service.EleicaoService;
-import br.com.eleicao.sistema.eleitor.model.Eleitor;
-import br.com.eleicao.sistema.eleitor.repository.EleitorRepository;
+import br.com.eleicao.sistema.auth.model.Usuario;
+import br.com.eleicao.sistema.auth.repository.UsuarioRepository;
 import br.com.eleicao.sistema.shared.enums.Cargo;
 import br.com.eleicao.sistema.shared.enums.Perfil;
 import br.com.eleicao.sistema.shared.enums.SituacaoEleicao;
@@ -45,7 +45,7 @@ public class UrnaService {
 
     private static final SecureRandom ALEATORIO = new SecureRandom();
 
-    private final EleitorRepository eleitorRepository;
+    private final UsuarioRepository usuarioRepository;
     private final CandidatoRepository candidatoRepository;
     private final CandidatoService candidatoService;
     private final EleicaoService eleicaoService;
@@ -66,7 +66,7 @@ public class UrnaService {
 
     @Transactional
     public ComprovanteResponse votar(CedulaRequest cedula) {
-        Eleitor eleitor = eleitorLogado();
+        Usuario votante = votanteLogado();
 
         Eleicao eleicao = entityManager.find(Eleicao.class, cedula.eleicaoId(), LockModeType.PESSIMISTIC_READ);
         if (eleicao == null) {
@@ -75,14 +75,14 @@ public class UrnaService {
         if (eleicao.getSituacao() != SituacaoEleicao.ABERTA) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A eleição não está aberta para votação");
         }
-        if (comprovanteRepository.existsByEleitorIdAndEleicaoId(eleitor.getId(), eleicao.getId())) {
+        if (comprovanteRepository.existsByUsuarioIdAndEleicaoId(votante.getId(), eleicao.getId())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Eleitor já votou nesta eleição");
         }
 
         List<Voto> votos = montarVotos(eleicao, cedula.votos());
 
         ComprovanteVotacao comprovante = new ComprovanteVotacao();
-        comprovante.setEleitor(eleitor);
+        comprovante.setUsuario(votante);
         comprovante.setEleicao(eleicao);
         comprovante.setCodigo(gerarCodigo());
         comprovante.setEmitidoEm(LocalDateTime.now());
@@ -96,23 +96,24 @@ public class UrnaService {
     }
 
     public ComprovanteResponse consultarComprovante(Long eleicaoId) {
-        Eleitor eleitor = eleitorLogado();
-        return comprovanteRepository.findByEleitorIdAndEleicaoId(eleitor.getId(), eleicaoId)
+        Usuario votante = votanteLogado();
+        return comprovanteRepository.findByUsuarioIdAndEleicaoId(votante.getId(), eleicaoId)
                 .map(this::toResponse)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Nenhum comprovante deste eleitor nesta eleição"));
     }
 
-    private Eleitor eleitorLogado() {
+    private Usuario votanteLogado() {
         UsuarioLogado usuario = usuarioLogado.getIfAvailable();
         if (usuario == null || usuario.getId() == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuário não autenticado");
         }
-        if (usuario.getPerfil() != Perfil.ELEITOR) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Somente eleitores podem votar");
+        if (usuario.getPerfil() != Perfil.ELEITOR && usuario.getPerfil() != Perfil.CANDIDATO) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Somente eleitores e candidatos podem votar");
         }
-        return eleitorRepository.findByUsuarioId(usuario.getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Eleitor não encontrado"));
+        return usuarioRepository.findById(usuario.getId())
+                .filter(votante -> votante.getPerfil() == usuario.getPerfil())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Votante não encontrado"));
     }
 
     private List<Cargo> cargosEmDisputa(Long eleicaoId) {

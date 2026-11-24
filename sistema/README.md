@@ -78,7 +78,7 @@ A API é **stateless** (`SessionCreationPolicy.STATELESS`, CSRF desabilitado) e 
 | Todos | `/eleitores`, `/eleitores/**` | `CHEFE` |
 | `GET` | `/candidatos?eleicaoId={id}&cargo={cargo}` (ambos os filtros) | `CHEFE`, `ELEITOR` |
 | Demais operações | `/candidatos`, `/candidatos/**`, `/partidos`, `/partidos/**` | `CHEFE` |
-| Todos | `/urna`, `/urna/**` | `ELEITOR` |
+| Todos | `/urna`, `/urna/**` | `ELEITOR`, `CANDIDATO` |
 | Todos | `/acompanhamento/**`, `/resultados/**`, `/apuracao/**` | `CHEFE`, `ELEITOR`, `CANDIDATO` (filtro por cargo do candidato no serviço) |
 
 ### Uso no Swagger UI e no Postman
@@ -147,7 +147,9 @@ Exemplos de requisição e resposta estão no Swagger UI.
 
 ## Módulo `votação` (urna)
 
-Registro dos votos e comprovante de votação. O voto é feito pelo **Eleitor**.
+Registro dos votos e comprovante de votação. Eleitores e candidatos votam com suas próprias contas.
+
+Em bancos MySQL que já possuem a tabela `comprovante_votacao` com a coluna `eleitor_id`, pare a aplicação e execute `schema/migrar-comprovantes-para-usuario.sql` antes de iniciar esta versão. A migração preserva os códigos emitidos e a participação em cada eleição.
 
 | Método | Rota | Função |
 | --- | --- | --- |
@@ -173,11 +175,11 @@ Resposta (`201`):
 { "codigo": "4F7A-9C21-B03E-77D5", "eleicaoId": 1, "emitidoEm": "2026-11-20T10:15:00" }
 ```
 
-No perfil `dev`, o eleitor logado vem dos cabeçalhos `X-Usuario-Id` (id do usuário) e `X-Perfil` (`ELEITOR`).
+No perfil `dev`, o eleitor logado vem dos cabeçalhos `X-Usuario-Id` (id do usuário) e `X-Perfil` (`ELEITOR` ou `CANDIDATO`).
 
 #### Regras
 
-- Só vota quem tem perfil `ELEITOR` (`401` sem login, `403` com outro perfil).
+- Podem votar os perfis `ELEITOR` e `CANDIDATO` (`401` sem login, `403` com outro perfil).
 - A eleição precisa estar `ABERTA` (`409` se não estiver).
 - Cada eleitor vota uma vez por eleição (`409` no segundo voto).
 - A cédula precisa de exatamente um voto para cada cargo em disputa; faltar cargo, repetir cargo ou votar em cargo sem disputa retorna `400`.
