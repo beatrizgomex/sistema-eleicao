@@ -10,6 +10,7 @@ import br.com.eleicao.sistema.shared.enums.Perfil;
 import br.com.eleicao.sistema.shared.enums.SituacaoEleicao;
 import br.com.eleicao.sistema.shared.enums.Turno;
 import br.com.eleicao.sistema.votacao.repository.VotoRepository;
+import br.com.eleicao.sistema.auth.service.ServicoJwt;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -37,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles({"dev", "test"})
+@ActiveProfiles("test")
 @Transactional
 @DisplayName("/urna")
 class UrnaIntegrationTest {
@@ -55,7 +56,11 @@ class UrnaIntegrationTest {
     private EntityManager entityManager;
 
     private Eleicao eleicao;
-    private Long eleitorUsuarioId;
+    private Usuario eleitorLogado;
+    private Usuario candidatoLogado;
+
+    @Autowired
+    private ServicoJwt servicoJwt;
 
     @BeforeEach
     void prepararEleicaoAberta() {
@@ -72,7 +77,7 @@ class UrnaIntegrationTest {
         partido.setNome("Partido da Urna");
         entityManager.persist(partido);
 
-        candidato(partido, 10, Cargo.GOVERNADOR, "gov10");
+        candidatoLogado = candidato(partido, 10, Cargo.GOVERNADOR, "gov10");
         candidato(partido, 20, Cargo.GOVERNADOR, "gov20");
         candidato(partido, 13, Cargo.PRESIDENTE, "pres13");
 
@@ -82,7 +87,7 @@ class UrnaIntegrationTest {
         eleitor.setUsuario(usuario("eleitor", Perfil.ELEITOR));
         entityManager.persist(eleitor);
         entityManager.flush();
-        eleitorUsuarioId = eleitor.getUsuario().getId();
+        eleitorLogado = eleitor.getUsuario();
     }
 
     private Usuario usuario(String login, Perfil perfil) {
@@ -93,7 +98,7 @@ class UrnaIntegrationTest {
         return usuario;
     }
 
-    private void candidato(Partido partido, int numero, Cargo cargo, String login) {
+    private Usuario candidato(Partido partido, int numero, Cargo cargo, String login) {
         Candidato candidato = new Candidato();
         candidato.setNome("Candidato " + numero);
         candidato.setNumero(numero);
@@ -102,28 +107,31 @@ class UrnaIntegrationTest {
         candidato.setEleicao(eleicao);
         candidato.setUsuario(usuario(login, Perfil.CANDIDATO));
         entityManager.persist(candidato);
+        return candidato.getUsuario();
     }
 
-    private ResultActions votar(Long usuarioId, Perfil perfil, String votos) throws Exception {
+    private ResultActions votar(Usuario usuario, String votos) throws Exception {
         MockHttpServletRequestBuilder requisicao = post("/urna/votos")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"eleicaoId":%d,"votos":%s}
                         """.formatted(eleicao.getId(), votos));
-        if (usuarioId != null) {
-            requisicao.header("X-Usuario-Id", usuarioId).header("X-Perfil", perfil.name());
+        if (usuario != null) {
+            requisicao.header("Authorization", "Bearer " + servicoJwt.gerarToken(usuario));
         }
         return mockMvc.perform(requisicao);
     }
 
     private ResultActions votarComoEleitor(String votos) throws Exception {
-        return votar(eleitorUsuarioId, Perfil.ELEITOR, votos);
+        return votar(eleitorLogado, votos);
     }
 
     @Test
     @DisplayName("monta a cédula com os cargos em disputa e seus candidatos")
     void cedula_cargosEmDisputa() throws Exception {
-        mockMvc.perform(get("/urna/cedula").param("eleicaoId", String.valueOf(eleicao.getId())))
+        mockMvc.perform(get("/urna/cedula")
+                        .header("Authorization", "Bearer " + servicoJwt.gerarToken(candidatoLogado))
+                        .param("eleicaoId", String.valueOf(eleicao.getId())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].cargo").value("GOVERNADOR"))
@@ -147,8 +155,27 @@ class UrnaIntegrationTest {
 
         mockMvc.perform(get("/urna/comprovante")
                         .param("eleicaoId", String.valueOf(eleicao.getId()))
-                        .header("X-Usuario-Id", eleitorUsuarioId)
-                        .header("X-Perfil", "ELEITOR"))
+                        .header("Authorization", "Bearer " + servicoJwt.gerarToken(eleitorLogado)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.codigo").value(codigo));
+    }
+
+    @Test
+    void candidatoVotaUmaVezEConsultaSeuProprioComprovante() throws Exception {
+        String autorizacao = "Bearer " + servicoJwt.gerarToken(candidatoLogado);
+        votarComoEleitor(CEDULA_VALIDA).andExpect(status().isCreated());
+        mockMvc.perform(get("/urna/comprovante").param("eleicaoId", eleicao.getId().toString())
+                        .header("Authorization", autorizacao))
+                .andExpect(status().isNotFound());
+
+        String resposta = votar(candidatoLogado, CEDULA_VALIDA).andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        String codigo = JsonPath.read(resposta, "$.codigo");
+        votar(candidatoLogado, CEDULA_VALIDA).andExpect(status().isConflict());
+        assertEquals(4, votoRepository.count());
+
+        mockMvc.perform(get("/urna/comprovante").param("eleicaoId", eleicao.getId().toString())
+                        .header("Authorization", autorizacao))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.codigo").value(codigo));
     }
@@ -182,13 +209,15 @@ class UrnaIntegrationTest {
     @Test
     @DisplayName("rejeita voto sem usuário logado com 401")
     void votar_semLogin() throws Exception {
-        votar(null, null, CEDULA_VALIDA).andExpect(status().isUnauthorized());
+        votar(null, CEDULA_VALIDA).andExpect(status().isUnauthorized());
     }
 
     @Test
     @DisplayName("rejeita voto de quem não é eleitor com 403")
     void votar_perfilChefe() throws Exception {
-        votar(eleitorUsuarioId, Perfil.CHEFE, CEDULA_VALIDA).andExpect(status().isForbidden());
+        Usuario chefe = usuario("chefe_urna", Perfil.CHEFE);
+        entityManager.persist(chefe);
+        votar(chefe, CEDULA_VALIDA).andExpect(status().isForbidden());
     }
 
     @Test

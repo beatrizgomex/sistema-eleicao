@@ -1,7 +1,7 @@
 package br.com.eleicao.sistema.votacao.model;
 
 import br.com.eleicao.sistema.eleicao.model.Eleicao;
-import br.com.eleicao.sistema.eleitor.model.Eleitor;
+import br.com.eleicao.sistema.auth.model.Usuario;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "comprovante_votacao", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"eleitor_id", "eleicao_id"})
+        @UniqueConstraint(columnNames = {"usuario_id", "eleicao_id"})
 })
 @Getter @Setter @NoArgsConstructor
 public class ComprovanteVotacao {
@@ -19,8 +19,8 @@ public class ComprovanteVotacao {
     private Long id;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "eleitor_id", nullable = false)
-    private Eleitor eleitor;
+    @JoinColumn(name = "usuario_id", nullable = false)
+    private Usuario usuario;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "eleicao_id", nullable = false)

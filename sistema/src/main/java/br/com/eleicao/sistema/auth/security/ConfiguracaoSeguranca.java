@@ -68,8 +68,8 @@ public class ConfiguracaoSeguranca {
                         .hasAnyRole("CHEFE", "ELEITOR")
                         .requestMatchers("/candidatos", "/candidatos/**", "/partidos", "/partidos/**").hasRole("CHEFE")
 
-                        // Urna de votação: exclusiva do ELEITOR
-                        .requestMatchers("/urna", "/urna/**").hasRole("ELEITOR")
+                        // Urna de votação: eleitores e candidatos
+                        .requestMatchers("/urna", "/urna/**").hasAnyRole("ELEITOR", "CANDIDATO")
 
                         // Acompanhamento e resultados: perfis autenticados (restrição por cargo no serviço)
                         .requestMatchers(

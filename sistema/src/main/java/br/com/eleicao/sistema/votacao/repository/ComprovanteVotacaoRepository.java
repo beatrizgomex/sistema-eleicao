@@ -9,9 +9,9 @@ import java.util.Optional;
 @Repository
 public interface ComprovanteVotacaoRepository extends JpaRepository<ComprovanteVotacao, Long> {
 
-    boolean existsByEleitorIdAndEleicaoId(Long eleitorId, Long eleicaoId);
+    boolean existsByUsuarioIdAndEleicaoId(Long usuarioId, Long eleicaoId);
 
-    boolean existsByEleitorId(Long eleitorId);
+    boolean existsByUsuarioId(Long usuarioId);
 
-    Optional<ComprovanteVotacao> findByEleitorIdAndEleicaoId(Long eleitorId, Long eleicaoId);
+    Optional<ComprovanteVotacao> findByUsuarioIdAndEleicaoId(Long usuarioId, Long eleicaoId);
 }

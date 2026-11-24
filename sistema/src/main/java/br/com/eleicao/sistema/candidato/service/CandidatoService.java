@@ -13,6 +13,7 @@ import br.com.eleicao.sistema.eleicao.model.Eleicao;
 import br.com.eleicao.sistema.shared.enums.Cargo;
 import br.com.eleicao.sistema.shared.enums.Perfil;
 import br.com.eleicao.sistema.shared.enums.SituacaoEleicao;
+import br.com.eleicao.sistema.votacao.repository.ComprovanteVotacaoRepository;
 import br.com.eleicao.sistema.votacao.repository.VotoRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -31,7 +32,8 @@ public class CandidatoService {
     private final CandidatoRepository candidatoRepository;
     private final PartidoRepository partidoRepository;
     private final UsuarioService usuarioService;
-    private final VotoRepository votoRepository; // novo campo final
+    private final VotoRepository votoRepository;
+    private final ComprovanteVotacaoRepository comprovanteRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -88,6 +90,10 @@ public class CandidatoService {
         if (candidato.getEleicao().getSituacao() == SituacaoEleicao.ABERTA) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Candidato não pode ser excluído com a eleição aberta");
+        }
+        if (comprovanteRepository.existsByUsuarioId(candidato.getUsuario().getId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Candidato não pode ser excluído: já participou de uma votação");
         }
         candidatoRepository.delete(candidato);
 

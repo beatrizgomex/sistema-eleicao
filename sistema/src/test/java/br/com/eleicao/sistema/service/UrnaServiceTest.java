@@ -8,7 +8,7 @@ import br.com.eleicao.sistema.candidato.service.CandidatoService;
 import br.com.eleicao.sistema.eleicao.model.Eleicao;
 import br.com.eleicao.sistema.eleicao.service.EleicaoService;
 import br.com.eleicao.sistema.eleitor.model.Eleitor;
-import br.com.eleicao.sistema.eleitor.repository.EleitorRepository;
+import br.com.eleicao.sistema.auth.repository.UsuarioRepository;
 import br.com.eleicao.sistema.shared.enums.Cargo;
 import br.com.eleicao.sistema.shared.enums.Perfil;
 import br.com.eleicao.sistema.shared.enums.SituacaoEleicao;
@@ -63,7 +63,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class UrnaServiceTest {
 
-    @Mock EleitorRepository eleitorRepository;
+    @Mock UsuarioRepository usuarioRepository;
     @Mock CandidatoRepository candidatoRepository;
     @Mock CandidatoService candidatoService;
     @Mock EleicaoService eleicaoService;
@@ -80,7 +80,7 @@ class UrnaServiceTest {
 
     @BeforeEach
     void setUp() {
-        urnaService = new UrnaService(eleitorRepository, candidatoRepository, candidatoService,
+        urnaService = new UrnaService(usuarioRepository, candidatoRepository, candidatoService,
                 eleicaoService, votoRepository, comprovanteRepository, usuarioLogadoProvider);
         ReflectionTestUtils.setField(urnaService, "entityManager", entityManager);
     }
@@ -91,12 +91,12 @@ class UrnaServiceTest {
         when(usuarioLogado.getPerfil()).thenReturn(perfil);
     }
 
-    private Eleitor logarEleitor() {
+    private void logarEleitor() {
         logarComo(Perfil.ELEITOR);
-        Eleitor eleitor = new Eleitor();
-        eleitor.setId(1L);
-        when(eleitorRepository.findByUsuarioId(7L)).thenReturn(Optional.of(eleitor));
-        return eleitor;
+        Usuario eleitor = new Usuario();
+        eleitor.setId(7L);
+        eleitor.setPerfil(Perfil.ELEITOR);
+        when(usuarioRepository.findById(7L)).thenReturn(Optional.of(eleitor));
     }
 
     private void eleicao(SituacaoEleicao situacao) {
@@ -109,7 +109,7 @@ class UrnaServiceTest {
     private void prontoParaVotar(Cargo... cargos) {
         logarEleitor();
         eleicao(SituacaoEleicao.ABERTA);
-        when(comprovanteRepository.existsByEleitorIdAndEleicaoId(1L, 1L)).thenReturn(false);
+        when(comprovanteRepository.existsByUsuarioIdAndEleicaoId(7L, 1L)).thenReturn(false);
         when(candidatoRepository.findCargosEmDisputa(1L)).thenReturn(List.of(cargos));
     }
 
@@ -150,7 +150,7 @@ class UrnaServiceTest {
         assertNull(votos.get(1).getCandidato());
 
         verify(comprovanteRepository).saveAndFlush(comprovanteGravado.capture());
-        assertEquals(1L, comprovanteGravado.getValue().getEleitor().getId());
+        assertEquals(7L, comprovanteGravado.getValue().getUsuario().getId());
         assertEquals(comprovanteGravado.getValue().getCodigo(), resposta.codigo());
         assertTrue(resposta.codigo().matches("[0-9A-F]{4}(-[0-9A-F]{4}){3}"));
     }
@@ -210,7 +210,7 @@ class UrnaServiceTest {
     void votar_jaVotou() {
         logarEleitor();
         eleicao(SituacaoEleicao.ABERTA);
-        when(comprovanteRepository.existsByEleitorIdAndEleicaoId(1L, 1L)).thenReturn(true);
+        when(comprovanteRepository.existsByUsuarioIdAndEleicaoId(7L, 1L)).thenReturn(true);
 
         assertStatus(HttpStatus.CONFLICT, () -> urnaService.votar(cedula(new VotoRequest(GOVERNADOR, BRANCO, null))));
         verifyNoInteractions(votoRepository);
@@ -285,7 +285,7 @@ class UrnaServiceTest {
     @DisplayName("retorna 404 no comprovante de quem não votou")
     void consultarComprovante_naoVotou() {
         logarEleitor();
-        when(comprovanteRepository.findByEleitorIdAndEleicaoId(1L, 1L)).thenReturn(Optional.empty());
+        when(comprovanteRepository.findByUsuarioIdAndEleicaoId(7L, 1L)).thenReturn(Optional.empty());
 
         assertStatus(HttpStatus.NOT_FOUND, () -> urnaService.consultarComprovante(1L));
     }
