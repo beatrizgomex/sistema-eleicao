@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Instant;
 import java.util.Optional;
 
 @Service
@@ -33,5 +34,26 @@ public class UsuarioService {
 
     public Optional<Usuario> buscarPorLogin(String login) {
         return usuarioRepository.findByLogin(login);
+    }
+
+    @Transactional
+    public void registrarFalhaLogin(Usuario usuario, int tentativasFalhas) {
+        usuario.setTentativasFalhas(tentativasFalhas);
+        usuario.setBloqueadoAte(null);
+        usuarioRepository.save(usuario);
+    }
+
+    @Transactional
+    public void registrarBloqueioLogin(Usuario usuario, int tentativasFalhas, Instant bloqueadoAte) {
+        usuario.setTentativasFalhas(tentativasFalhas);
+        usuario.setBloqueadoAte(bloqueadoAte);
+        usuarioRepository.save(usuario);
+    }
+
+    @Transactional
+    public void limparTentativasLogin(Usuario usuario) {
+        usuario.setTentativasFalhas(0);
+        usuario.setBloqueadoAte(null);
+        usuarioRepository.save(usuario);
     }
 }

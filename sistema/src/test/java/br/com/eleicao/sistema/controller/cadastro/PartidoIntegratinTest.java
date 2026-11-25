@@ -3,6 +3,7 @@ package br.com.eleicao.sistema.controller.cadastro;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -39,5 +40,19 @@ class PartidoIntegrationTest extends CadastrosIntegrationBase {
     void buscarPorId_inexistente() throws Exception {
         mockMvc.perform(get("/partidos/99999"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("retorna 409 ao tentar excluir partido com candidato vinculado")
+    void excluir_comCandidatoVinculado_retorna409() throws Exception {
+        long partidoId = criarPartido("PVI");
+        long eleicaoId = criarEleicao();
+        postJson("/candidatos", """
+                {"nome":"Joao","numero":10,"cargo":"GOVERNADOR","partidoId":%d,"eleicaoId":%d,"login":"joao_pvi","senha":"abc"}
+                """.formatted(partidoId, eleicaoId))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(delete("/partidos/" + partidoId))
+                .andExpect(status().isConflict());
     }
 }

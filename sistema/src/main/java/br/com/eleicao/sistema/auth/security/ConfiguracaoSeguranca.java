@@ -61,11 +61,11 @@ public class ConfiguracaoSeguranca {
                         // Gerenciamento de eleitores: exclusivo do CHEFE
                         .requestMatchers("/eleitores", "/eleitores/**").hasRole("CHEFE")
 
-                        // O ELEITOR pode consultar candidatos somente por eleição e cargo.
+                        // Eleitores e candidatos podem consultar candidatos disponíveis por eleição e cargo.
                         .requestMatchers(requisicao -> getCandidatos.matches(requisicao)
                                 && StringUtils.hasText(requisicao.getParameter("eleicaoId"))
                                 && StringUtils.hasText(requisicao.getParameter("cargo")))
-                        .hasAnyRole("CHEFE", "ELEITOR")
+                        .hasAnyRole("CHEFE", "ELEITOR", "CANDIDATO")
                         .requestMatchers("/candidatos", "/candidatos/**", "/partidos", "/partidos/**").hasRole("CHEFE")
 
                         // Urna de votação: eleitores e candidatos

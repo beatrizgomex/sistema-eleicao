@@ -16,6 +16,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -105,5 +107,83 @@ class TesteIntegracaoAutenticacao {
                                 {"login":"","senha":""}
                                 """))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("bloqueia usuário após 5 tentativas falhas e exibe apenas mensagem para tentar mais tarde")
+    void bloqueiaUsuarioAposCincoTentativasFalhasSemExibirTempo() throws Exception {
+        servicoUsuario.criar("candidato_bloqueio", "senhaCorreta", Perfil.CANDIDATO);
+
+        for (int tentativa = 1; tentativa <= 4; tentativa++) {
+            simuladorMvc.perform(post("/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {"login":"candidato_bloqueio","senha":"errada"}
+                                    """))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.message").value("Login ou senha inválidos"));
+        }
+
+        String corpoQuintaFalha = simuladorMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"login":"candidato_bloqueio","senha":"errada"}
+                                """))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.message").value("Tente novamente mais tarde"))
+                .andExpect(jsonPath("$.token").doesNotExist())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertFalse(corpoQuintaFalha.toLowerCase().contains("minuto"));
+        assertFalse(corpoQuintaFalha.contains("bloqueadoAte"));
+
+        // Mesmo informando a senha correta durante o período de bloqueio, o acesso permanece negado
+        simuladorMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"login":"candidato_bloqueio","senha":"senhaCorreta"}
+                                """))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.message").value("Tente novamente mais tarde"))
+                .andExpect(jsonPath("$.token").doesNotExist());
+
+        var usuarioPersistido = servicoUsuario.buscarPorLogin("candidato_bloqueio").orElseThrow();
+        assertEquals(5, usuarioPersistido.getTentativasFalhas());
+        assertNotNull(usuarioPersistido.getBloqueadoAte());
+    }
+
+    @Test
+    @DisplayName("zera contagem de falhas ao autenticar com sucesso antes da quinta tentativa")
+    void zeraFalhasAoAutenticarAntesDoLimite() throws Exception {
+        servicoUsuario.criar("eleitor_reset", "senhaValida", Perfil.ELEITOR);
+
+        for (int tentativa = 1; tentativa <= 4; tentativa++) {
+            simuladorMvc.perform(post("/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {"login":"eleitor_reset","senha":"incorreta"}
+                                    """))
+                    .andExpect(status().isUnauthorized());
+        }
+
+        simuladorMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"login":"eleitor_reset","senha":"senhaValida"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isNotEmpty());
+
+        // Após sucesso, mais 4 falhas retornam 401 (não bloqueiam na primeira nem na quarta)
+        for (int tentativa = 1; tentativa <= 4; tentativa++) {
+            simuladorMvc.perform(post("/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {"login":"eleitor_reset","senha":"incorreta"}
+                                    """))
+                    .andExpect(status().isUnauthorized());
+        }
     }
 }

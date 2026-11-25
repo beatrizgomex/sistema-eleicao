@@ -59,6 +59,7 @@ public class EleitorService {
         return toResponse(eleitorRepository.save(eleitor));
     }
 
+    @Transactional
     public void excluir(Long id) {
         Eleitor eleitor = buscar(id);
 

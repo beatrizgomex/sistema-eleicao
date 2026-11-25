@@ -2,6 +2,7 @@ package br.com.eleicao.sistema.candidato.service;
 
 import br.com.eleicao.sistema.candidato.dto.PartidoRequest;
 import br.com.eleicao.sistema.candidato.model.Partido;
+import br.com.eleicao.sistema.candidato.repository.CandidatoRepository;
 import br.com.eleicao.sistema.candidato.repository.PartidoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,7 @@ import java.util.List;
 public class PartidoService {
 
     private final PartidoRepository partidoRepository;
+    private final CandidatoRepository candidatoRepository;
 
     @Transactional
     public Partido cadastrarPartido(PartidoRequest request) {
@@ -41,8 +43,14 @@ public class PartidoService {
         return buscarPartido(id);
     }
 
+    @Transactional
     public void excluir(Long id) {
-        partidoRepository.delete(buscarPorId(id));
+        Partido partido = buscarPorId(id);
+        if (candidatoRepository.existsByPartidoId(id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Partido não pode ser excluído: possui candidatos vinculados");
+        }
+        partidoRepository.delete(partido);
     }
 
     @Transactional

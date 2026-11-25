@@ -289,4 +289,30 @@ class UrnaServiceTest {
 
         assertStatus(HttpStatus.NOT_FOUND, () -> urnaService.consultarComprovante(1L));
     }
+
+    @Test
+    @DisplayName("permite que perfil CANDIDATO vote na eleição e receba comprovante")
+    void votar_comoCandidato() {
+        logarComo(Perfil.CANDIDATO);
+        Usuario usuarioCandidato = new Usuario();
+        usuarioCandidato.setId(7L);
+        usuarioCandidato.setPerfil(Perfil.CANDIDATO);
+        when(usuarioRepository.findById(7L)).thenReturn(Optional.of(usuarioCandidato));
+
+        eleicao(SituacaoEleicao.ABERTA);
+        when(comprovanteRepository.existsByUsuarioIdAndEleicaoId(7L, 1L)).thenReturn(false);
+        when(candidatoRepository.findCargosEmDisputa(1L)).thenReturn(List.of(GOVERNADOR));
+        Candidato proprioCandidato = candidato(GOVERNADOR, 10);
+        when(comprovanteRepository.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
+
+        ComprovanteResponse resposta = urnaService.votar(cedula(new VotoRequest(GOVERNADOR, CANDIDATO, 10)));
+
+        verify(votoRepository).saveAll(votosGravados.capture());
+        assertEquals(1, votosGravados.getValue().size());
+        assertEquals(proprioCandidato, votosGravados.getValue().get(0).getCandidato());
+
+        verify(comprovanteRepository).saveAndFlush(comprovanteGravado.capture());
+        assertEquals(usuarioCandidato, comprovanteGravado.getValue().getUsuario());
+        assertEquals(comprovanteGravado.getValue().getCodigo(), resposta.codigo());
+    }
 }

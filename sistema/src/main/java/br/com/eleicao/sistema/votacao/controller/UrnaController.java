@@ -18,7 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/urna")
 @RequiredArgsConstructor
-@Tag(name = "Urna", description = "Votação do eleitor, com voto secreto e comprovante")
+@Tag(name = "Urna", description = "Votação secreta de eleitores e candidatos, com emissão de comprovante")
 public class UrnaController {
 
     private final UrnaService urnaService;
@@ -28,7 +28,9 @@ public class UrnaController {
             description = "Lista os cargos em disputa na eleição e os candidatos de cada um.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Cédula montada"),
-            @ApiResponse(responseCode = "404", description = "Eleição não encontrada")
+            @ApiResponse(responseCode = "401", description = "Não autenticado"),
+            @ApiResponse(responseCode = "403", description = "Perfil sem permissão para votar"),
+            @ApiResponse(responseCode = "404", description = "Eleição ou votante não encontrado")
     })
     public List<CargoNaCedulaResponse> cedula(@RequestParam Long eleicaoId) {
         return urnaService.montarCedula(eleicaoId);
@@ -45,8 +47,8 @@ public class UrnaController {
             @ApiResponse(responseCode = "400", description = "Cédula incompleta, cargo repetido ou número indevido"),
             @ApiResponse(responseCode = "401", description = "Não autenticado"),
             @ApiResponse(responseCode = "403", description = "Perfil sem permissão para votar"),
-            @ApiResponse(responseCode = "404", description = "Eleição, eleitor ou candidato não encontrado"),
-            @ApiResponse(responseCode = "409", description = "Eleição não está aberta ou o eleitor já votou")
+            @ApiResponse(responseCode = "404", description = "Eleição, votante ou candidato não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Eleição não está aberta ou o votante já votou")
     })
     public ComprovanteResponse votar(@Valid @RequestBody CedulaRequest cedula) {
         return urnaService.votar(cedula);
@@ -59,7 +61,7 @@ public class UrnaController {
             @ApiResponse(responseCode = "200", description = "Comprovante encontrado"),
             @ApiResponse(responseCode = "401", description = "Não autenticado"),
             @ApiResponse(responseCode = "403", description = "Perfil sem permissão para votar"),
-            @ApiResponse(responseCode = "404", description = "O eleitor não votou nesta eleição")
+            @ApiResponse(responseCode = "404", description = "O votante não votou nesta eleição")
     })
     public ComprovanteResponse comprovante(@RequestParam Long eleicaoId) {
         return urnaService.consultarComprovante(eleicaoId);

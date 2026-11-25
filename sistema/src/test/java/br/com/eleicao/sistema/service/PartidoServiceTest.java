@@ -2,6 +2,7 @@ package br.com.eleicao.sistema.candidato.service;
 
 import br.com.eleicao.sistema.candidato.dto.PartidoRequest;
 import br.com.eleicao.sistema.candidato.model.Partido;
+import br.com.eleicao.sistema.candidato.repository.CandidatoRepository;
 import br.com.eleicao.sistema.candidato.repository.PartidoRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,6 +25,7 @@ import static org.mockito.Mockito.when;
 class PartidoServiceTest {
 
     @Mock PartidoRepository partidoRepository;
+    @Mock CandidatoRepository candidatoRepository;
     @InjectMocks PartidoService partidoService;
 
     private Partido partidoExistente() {
@@ -83,9 +85,23 @@ class PartidoServiceTest {
     void excluir_removeOPartido() {
         Partido partido = partidoExistente();
         when(partidoRepository.findById(1L)).thenReturn(Optional.of(partido));
+        when(candidatoRepository.existsByPartidoId(1L)).thenReturn(false);
 
         partidoService.excluir(1L);
 
         verify(partidoRepository).delete(partido);
+    }
+
+    @Test
+    void excluir_comCandidatosVinculados_retorna409() {
+        Partido partido = partidoExistente();
+        when(partidoRepository.findById(1L)).thenReturn(Optional.of(partido));
+        when(candidatoRepository.existsByPartidoId(1L)).thenReturn(true);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> partidoService.excluir(1L));
+
+        assertEquals(409, ex.getStatusCode().value());
+        verify(partidoRepository, never()).delete(any());
     }
 }

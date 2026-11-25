@@ -169,20 +169,41 @@ class TesteIntegracaoSeguranca {
     }
 
     @Test
-    @DisplayName("retorna 403 quando CANDIDATO tenta listar candidatos")
+    @DisplayName("retorna 403 quando CANDIDATO tenta listar candidatos sem filtro de eleição e cargo")
     void candidatoEmGetCandidatosRetorna403() throws Exception {
+        String autorizacao = cabecalhoAutorizacao(candidato);
+
         simuladorMvc.perform(get("/candidatos")
-                        .header(HttpHeaders.AUTHORIZATION, cabecalhoAutorizacao(candidato)))
+                        .header(HttpHeaders.AUTHORIZATION, autorizacao))
+                .andExpect(status().isForbidden());
+        simuladorMvc.perform(get("/candidatos/1")
+                        .header(HttpHeaders.AUTHORIZATION, autorizacao))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    @DisplayName("retorna 403 quando CHEFE tenta acessar POST /urna/votos")
+    @DisplayName("permite ao CANDIDATO consultar candidatos disponíveis por eleição e cargo para votar")
+    void candidatoConsultaCandidatosPorEleicaoECargo() throws Exception {
+        simuladorMvc.perform(get("/candidatos")
+                        .param("eleicaoId", "1")
+                        .param("cargo", "PRESIDENTE")
+                        .header(HttpHeaders.AUTHORIZATION, cabecalhoAutorizacao(candidato)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("retorna 403 quando CHEFE tenta acessar POST /urna/votos ou GET /urna/cedula")
     void chefeEmPostUrnaVotosRetorna403() throws Exception {
+        String autorizacaoChefe = cabecalhoAutorizacao(chefe);
+
         simuladorMvc.perform(post("/urna/votos")
-                        .header(HttpHeaders.AUTHORIZATION, cabecalhoAutorizacao(chefe))
+                        .header(HttpHeaders.AUTHORIZATION, autorizacaoChefe)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
+                .andExpect(status().isForbidden());
+        simuladorMvc.perform(get("/urna/cedula")
+                        .param("eleicaoId", "1")
+                        .header(HttpHeaders.AUTHORIZATION, autorizacaoChefe))
                 .andExpect(status().isForbidden());
     }
 
