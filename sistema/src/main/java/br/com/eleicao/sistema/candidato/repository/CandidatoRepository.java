@@ -21,6 +21,8 @@ public interface CandidatoRepository extends JpaRepository<Candidato, Long> {
 
     Optional<Candidato> findByUsuarioId(Long usuarioId);
 
+    boolean existsByPartidoId(Long partidoId);
+
     @Query("select distinct c.cargo from Candidato c where c.eleicao.id = :eleicaoId")
     List<Cargo> findCargosEmDisputa(@Param("eleicaoId") Long eleicaoId);
 }

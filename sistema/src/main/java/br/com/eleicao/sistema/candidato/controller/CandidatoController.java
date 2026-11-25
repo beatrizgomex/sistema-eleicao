@@ -29,7 +29,6 @@ public class CandidatoController {
         return candidatoService.cadastrarCandidato(request);
     }
 
-    // TODO segurança: @PreAuthorize("hasAnyRole('CHEFE','ELEITOR')")
     @GetMapping
     @Operation(summary = "Lista candidatos. Com eleicaoId e cargo, lista os disponíveis para votação")
     public List<CandidatoResponse> listar(@RequestParam(required = false) Long eleicaoId,

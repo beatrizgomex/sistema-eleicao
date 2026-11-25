@@ -43,7 +43,8 @@ public class ControladorAutenticacao {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Autenticação realizada com sucesso"),
             @ApiResponse(responseCode = "400", description = "Campos obrigatórios ausentes ou em branco"),
-            @ApiResponse(responseCode = "401", description = "Login ou senha inválidos")
+            @ApiResponse(responseCode = "401", description = "Login ou senha inválidos"),
+            @ApiResponse(responseCode = "429", description = "Tente novamente mais tarde")
     })
     public RespostaLogin autenticar(@Valid @RequestBody SolicitacaoLogin requisicao) {
         return servicoAutenticacao.autenticar(requisicao);

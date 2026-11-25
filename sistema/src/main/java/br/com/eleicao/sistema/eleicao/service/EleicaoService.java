@@ -7,6 +7,7 @@ import br.com.eleicao.sistema.eleicao.repository.EleicaoRepository;
 import br.com.eleicao.sistema.shared.enums.SituacaoEleicao;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Clock;
@@ -31,6 +32,7 @@ public EleicaoService(EleicaoRepository repository) {
         this.clock = clock;
     }
 
+    @Transactional
     public Eleicao cadastrar(Eleicao eleicao) {
         validarHorarios(eleicao);
 
@@ -57,6 +59,7 @@ public EleicaoService(EleicaoRepository repository) {
                 == SituacaoEleicao.ABERTA;
     }
 
+    @Transactional
     public Eleicao alterar(Long id, Eleicao dados) {
         Eleicao eleicao = buscarOuFalhar(id);
 
@@ -77,6 +80,7 @@ public EleicaoService(EleicaoRepository repository) {
         return repository.save(eleicao);
     }
 
+    @Transactional
     public Eleicao abrir(Long id) {
         Eleicao eleicao = buscarOuFalhar(id);
 
@@ -105,6 +109,7 @@ public EleicaoService(EleicaoRepository repository) {
         return repository.save(eleicao);
     }
 
+    @Transactional
     public Eleicao encerrar(Long id) {
         Eleicao eleicao = buscarOuFalhar(id);
 

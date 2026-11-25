@@ -64,6 +64,7 @@ A API é **stateless** (`SessionCreationPolicy.STATELESS`, CSRF desabilitado) e 
 - **Respostas de erro padronizadas**:
   - `401 Unauthorized`: requisição sem token ou com token inválido/adulterado/expirado (ou falha de credenciais no login).
   - `403 Forbidden`: usuário autenticado, porém com perfil sem permissão para a rota ou método HTTP solicitado.
+  - `429 Too Many Requests`: conta temporariamente bloqueada após 5 tentativas consecutivas de login com falha (retorna apenas a mensagem `"Tente novamente mais tarde"`, sem expor o tempo de bloqueio).
 - **Sigilo do voto**: o token JWT identifica o eleitor apenas para verificar aptidão e registrar o `ComprovanteVotacao`; a entidade `Voto` não armazena referência ao eleitor nem ao usuário.
 
 ### Regras de acesso por rota (`ConfiguracaoSeguranca`)
@@ -76,7 +77,7 @@ A API é **stateless** (`SessionCreationPolicy.STATELESS`, CSRF desabilitado) e 
 | `GET` | `/eleicoes`, `/eleicoes/**` | Qualquer usuário autenticado (`CHEFE`, `ELEITOR`, `CANDIDATO`) |
 | `POST`, `PUT`, `PATCH`, `DELETE` | `/eleicoes`, `/eleicoes/**` | `CHEFE` |
 | Todos | `/eleitores`, `/eleitores/**` | `CHEFE` |
-| `GET` | `/candidatos?eleicaoId={id}&cargo={cargo}` (ambos os filtros) | `CHEFE`, `ELEITOR` |
+| `GET` | `/candidatos?eleicaoId={id}&cargo={cargo}` (ambos os filtros) | `CHEFE`, `ELEITOR`, `CANDIDATO` |
 | Demais operações | `/candidatos`, `/candidatos/**`, `/partidos`, `/partidos/**` | `CHEFE` |
 | Todos | `/urna`, `/urna/**` | `ELEITOR`, `CANDIDATO` |
 | Todos | `/acompanhamento/**`, `/resultados/**`, `/apuracao/**` | `CHEFE`, `ELEITOR`, `CANDIDATO` (filtro por cargo do candidato no serviço) |
@@ -90,7 +91,7 @@ A API é **stateless** (`SessionCreationPolicy.STATELESS`, CSRF desabilitado) e 
 
 ## Módulo `autenticação`
 
-A rota `POST /auth/login` recebe `login` e `senha` em JSON. A API busca o usuário pelo login e verifica a senha usando o hash armazenado no banco. Quando as credenciais são válidas, retorna `200` com `token`, `tipo` (`Bearer`), `expiraEm` e `perfil`. Campos obrigatórios ausentes ou em branco retornam `400`. Credenciais inválidas retornam `401`.
+A rota `POST /auth/login` recebe `login` e `senha` em JSON. A API busca o usuário pelo login e verifica a senha usando o hash armazenado no banco. Quando as credenciais são válidas, retorna `200` com `token`, `tipo` (`Bearer`), `expiraEm` e `perfil`. Campos obrigatórios ausentes ou em branco retornam `400`. Credenciais inválidas retornam `401`. Caso um usuário acumule 5 tentativas consecutivas de login com falha, seu acesso é bloqueado por 30 minutos e a API retorna `429` com a mensagem `"Tente novamente mais tarde"` (sem exibir o tempo de bloqueio).
 
 O JWT é assinado com HS256 e expira em 60 minutos na configuração padrão. Ele contém o ID, o login e o perfil do usuário autenticado.
 
@@ -107,7 +108,7 @@ A entidade `Usuario` é persistida na tabela `usuario`, que armazena o ID, o log
 
 ### Módulos `eleitor`, `candidato` e `partido`
 
-Cadastros que alimentam a eleição: eleitores, candidatos e partidos. O acesso é restrito ao **Chefe da Seção**. O **Eleitor** pode consultar candidatos informando a eleição e o cargo.
+Cadastros que alimentam a eleição: eleitores, candidatos e partidos. O acesso de gerenciamento é restrito ao **Chefe da Seção**. **Eleitores** e **Candidatos** podem consultar os candidatos disponíveis para votação informando a eleição e o cargo.
 
 #### Eleitores
 

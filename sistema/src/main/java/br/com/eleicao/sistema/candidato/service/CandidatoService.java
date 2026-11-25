@@ -80,6 +80,7 @@ public class CandidatoService {
         return toResponse(candidatoRepository.save(candidato));
     }
 
+    @Transactional
     public void excluir(Long id) {
         Candidato candidato = buscar(id);
 
