@@ -23,18 +23,18 @@ OBS: Alguns comandos que podem ajudar na configuração incial no cmd/powershell
 
 cmd:
 
-set "DB_USER=root"
-set "DB_PASSWORD=SUA_SENHA_DO_MYSQL"
-set "JWT_SECRET=chave-secreta-local-com-pelo-menos-32-bytes-123"
-set "CHEFE_SENHA=chefe123"
-mvnw spring-boot:run
+set "DB_USER=root" <br>
+set "DB_PASSWORD=SUA_SENHA_DO_MYSQL" <br>
+set "JWT_SECRET=chave-secreta-local-com-pelo-menos-32-bytes-123" <br>
+set "CHEFE_SENHA=chefe123" <br>
+mvnw spring-boot:run 
 
 ps:
 
-$env:DB_USER="root"
-$env:DB_PASSWORD="SUA_SENHA_DO_MYSQL"
-$env:JWT_SECRET="chave-secreta-local-com-pelo-menos-32-bytes-123"
-$env:CHEFE_SENHA="chefe123"
+$env:DB_USER="root"<br>
+$env:DB_PASSWORD="SUA_SENHA_DO_MYSQL"<br> 
+$env:JWT_SECRET="chave-secreta-local-com-pelo-menos-32-bytes-123"<br>
+$env:CHEFE_SENHA="chefe123"<br>
 .\mvnw spring-boot:run
 
 ## Arquitetura
