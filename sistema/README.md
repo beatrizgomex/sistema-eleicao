@@ -19,6 +19,24 @@ Java 17, Spring Boot, Spring Data JPA, Spring Security + JWT, Bean Validation, M
    - **Senha:** defina `CHEFE_SENHA` antes de iniciar com um banco sem Chefe. Em bancos que já têm um Chefe, essa variável não altera a senha cadastrada.
 5. Swagger UI: http://localhost:8080/swagger-ui.html (especificação JSON em http://localhost:8080/v3/api-docs)
 
+OBS: Alguns comandos que podem ajudar na configuração incial no cmd/powershell:
+
+cmd:
+
+set "DB_USER=root"
+set "DB_PASSWORD=SUA_SENHA_DO_MYSQL"
+set "JWT_SECRET=chave-secreta-local-com-pelo-menos-32-bytes-123"
+set "CHEFE_SENHA=chefe123"
+mvnw spring-boot:run
+
+ps:
+
+$env:DB_USER="root"
+$env:DB_PASSWORD="SUA_SENHA_DO_MYSQL"
+$env:JWT_SECRET="chave-secreta-local-com-pelo-menos-32-bytes-123"
+$env:CHEFE_SENHA="chefe123"
+.\mvnw spring-boot:run
+
 ## Arquitetura
 
 A aplicação segue uma **arquitetura em camadas** dentro de uma organização **package-by-feature** (`br.com.eleicao.sistema.<dominio>`), mantendo um pacote `shared/` para tipos e configurações transversais (`enums`, OpenAPI/Swagger).
